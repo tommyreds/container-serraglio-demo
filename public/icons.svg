@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Illustrazioni delle categorie, usate quando un prodotto non ha foto.
+       Tutte su una griglia 80×80, tratto blu notte da 3, riempimenti giallo
+       e blu del marchio, stessi raccordi tondi: devono sembrare una famiglia. -->
+
+  <symbol id="ill-schiacciata" viewBox="0 0 80 80">
+    <path fill="#FFC42E" d="M12 36c0-9 12-15 28-15s28 6 28 15z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M12 36c0-9 12-15 28-15s28 6 28 15z"/>
+    <path fill="#1F4C98" d="M11 40h58l-3 6H14z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M10 40c5 3 9-3 14 0s9-3 14 0 9-3 14 0 9-3 14 0 4 1 4 1"/>
+    <path fill="#FFC42E" d="M12 50h56c0 6-12 10-28 10s-28-4-28-10z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M12 50h56c0 6-12 10-28 10s-28-4-28-10z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M26 28h.01M40 25h.01M54 28h.01"/>
+  </symbol>
+
+  <symbol id="ill-pinsa" viewBox="0 0 80 80">
+    <path fill="#FFC42E" d="M10 42c0-11 13-19 30-19s30 8 30 19-13 18-30 18-30-7-30-18z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M10 42c0-11 13-19 30-19s30 8 30 19-13 18-30 18-30-7-30-18z"/>
+    <path fill="#FFF3D1" d="M18 42c0-7 10-12 22-12s22 5 22 12-10 11-22 11-22-4-22-11z"/>
+    <circle fill="#1F4C98" cx="30" cy="39" r="4"/><circle fill="#1F4C98" cx="48" cy="46" r="4"/><circle fill="#1F4C98" cx="47" cy="35" r="3"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M33 48l3-2M55 40l2 1M25 45h.01"/>
+  </symbol>
+
+  <symbol id="ill-burger" viewBox="0 0 80 80">
+    <path fill="#FFC42E" d="M15 36c0-10 11-17 25-17s25 7 25 17z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M15 36c0-10 11-17 25-17s25 7 25 17z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M13 42c5-3 9 3 14 0s9 3 13 0 9 3 14 0 9 3 13 0"/>
+    <rect fill="#1F4C98" x="15" y="46" width="50" height="7" rx="3.5"/>
+    <path fill="#FFC42E" d="M15 57h50c0 5-11 8-25 8s-25-3-25-8z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M15 57h50c0 5-11 8-25 8s-25-3-25-8z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M30 27h.01M40 24h.01M50 27h.01"/>
+  </symbol>
+
+  <symbol id="ill-hotdog" viewBox="0 0 80 80">
+    <path fill="#FFC42E" d="M13 45c0-6 6-10 14-10h26c8 0 14 4 14 10s-6 10-14 10H27c-8 0-14-4-14-10z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M13 45c0-6 6-10 14-10h26c8 0 14 4 14 10s-6 10-14 10H27c-8 0-14-4-14-10z"/>
+    <rect fill="#1F4C98" x="9" y="38" width="62" height="9" rx="4.5"/>
+    <rect fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" x="9" y="38" width="62" height="9" rx="4.5"/>
+    <path d="M21 38c4 4 8-4 12 0s8-4 12 0 8-4 12 0" fill="none" stroke="#FFC42E" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ill-primo" viewBox="0 0 80 80">
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M30 28c-2-5 3-7 5-12M42 27c-2-5 3-7 5-12" opacity=".45"/>
+    <path fill="#FFC42E" d="M21 42c4-6 11-8 19-8s15 2 19 8z"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M25 40c4 2 7-2 11 0s7-2 11 0 7-2 10 0"/>
+    <path fill="#FFFFFF" d="M12 42h56c0 12-12 21-28 21S12 54 12 42z"/>
+    <path fill="#1F4C98" d="M16 48h48c-1 2-2 4-4 6H20c-2-2-3-4-4-6z" opacity=".25"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M12 42h56c0 12-12 21-28 21S12 54 12 42z"/>
+  </symbol>
+
+  <symbol id="ill-piatto" viewBox="0 0 80 80">
+    <circle fill="#FFFFFF" cx="40" cy="44" r="24"/>
+    <circle fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" cx="40" cy="44" r="24"/>
+    <circle fill="#FFC42E" cx="40" cy="44" r="14"/>
+    <circle fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" cx="40" cy="44" r="14"/>
+    <path fill="none" stroke="#0B1C2E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14 18v12a4 4 0 0 0 8 0V18M18 18v40M64 18c-4 3-5 9-5 14h5v26"/>
+  </symbol>
+</svg>
