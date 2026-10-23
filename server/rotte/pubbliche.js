@@ -4,8 +4,10 @@ import zlib from "node:zlib";
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "../db.js";
 import { NOME_VALIDO, TIPI_MIME } from "../foto.js";
 import { oraRoma } from "../../public/lib/orari.js";
+import { paginaLegale, NOMI_PAGINE, robotsTxt, sitemapXml } from "../legale.js";
+import { asset } from "../render.js";
 
-export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render }) {
+export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render, baseUrl }) {
   const r = express.Router();
 
   /* La pagina si comprime qui (circa 60 KB → 12 KB): in produzione Caddy
@@ -19,6 +21,22 @@ export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render }
     }
     res.send(html);
   });
+
+  /* Pagine legali: composte a ogni richiesta dai dati del pannello (sono
+     poche e leggere, e così non restano mai indietro). */
+  const origine = req => baseUrl || `${req.protocol}://${req.get("host")}`;
+  for (const nome of NOMI_PAGINE) {
+    r.get(`/${nome}`, (req, res) => {
+      const oggi = oraRoma(now()).data;
+      res.set("Cache-Control", "no-cache").type("html").send(paginaLegale(nome, {
+        impostazioni: leggiImpostazioni(db), menu: leggiMenu(db, { oggi }), oggi
+      }, { asset }));
+    });
+  }
+  r.get("/robots.txt", (req, res) => {
+    res.type("text/plain").send(robotsTxt(leggiImpostazioni(db).modalita_demo === "1", origine(req)));
+  });
+  r.get("/sitemap.xml", (req, res) => res.type("application/xml").send(sitemapXml(origine(req))));
 
   // esplicita: public/admin/ è anche una cartella (i moduli del pannello)
   r.get("/admin", (req, res) => {

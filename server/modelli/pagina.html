@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--slot:head-meta-->
+<meta name="theme-color" content="#F4F1EA">
+<link rel="icon" href="img/logo-blu.png">
+<link rel="stylesheet" href="{{asset:style.css}}">
+</head>
+<body>
+<a class="salta" href="#contenuto">Vai al contenuto</a>
+<!--slot:demo-->
+
+<header class="testata scorre">
+  <div class="wrap testata-in">
+    <a class="marchio" href="./">
+      <img src="img/logo-blu.png" alt="" width="113" height="166">
+      <span>Container Serraglio</span>
+    </a>
+    <a class="bottone bottone-giallo" href="./#menu">Torna al menù</a>
+  </div>
+</header>
+
+<main class="wrap pagina" id="contenuto">
+<!--slot:contenuto-->
+</main>
+
+<footer class="piede">
+  <div class="wrap piede-griglia">
+    <img src="img/logo-bianco.png" alt="Container Serraglio" width="113" height="166" loading="lazy">
+    <!--slot:legale-->
+    <nav class="piede-link" aria-label="Informazioni">
+      <a href="privacy">Privacy e cookie</a>
+      <a href="allergeni">Allergeni</a>
+      <a href="ordini-come">Come funzionano gli ordini</a>
+      <a href="crediti">Crediti foto</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

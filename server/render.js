@@ -13,6 +13,7 @@ import { etichetteAllergeni } from "../public/lib/allergeni.js";
 import { oraRoma, aggiungiGiorni, statoApertura, testoStato } from "../public/lib/orari.js";
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "./db.js";
 import { tipoImmagine, dimensioniImmagine } from "./foto.js";
+import { footerLegale } from "./legale.js";
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(qui, "..", "public");
@@ -61,7 +62,7 @@ function mediaHtml(p, c, caricamento = "lazy") {
    style.css?v=1a2b3c4d: il browser le tiene in cache un anno e il numero
    cambia da solo quando cambia il file. */
 const versioni = new Map();
-function asset(file) {
+export function asset(file) {
   if (!versioni.has(file)) {
     try {
       const v = crypto.createHash("sha1").update(fs.readFileSync(path.join(cartelle.img, file))).digest("hex").slice(0, 8);
@@ -142,15 +143,6 @@ ${orari.map(o => `      <li${o.giorno === giorno ? ' class="oggi"' : ""}><span>$
     ${prossime.length ? `<ul class="chiusure">${prossime.map(c => `<li>Chiuso ${e(dataLunga(c.data))}${c.motivo ? ` · ${e(c.motivo)}` : ""}</li>`).join("")}</ul>` : ""}
   </div>
 </div>`;
-}
-
-/* Dati identificativi obbligatori nel piede: se mancano si vede che mancano,
-   non si inventano. */
-export function piedeLegale(imp) {
-  const voce = (etichetta, valore) =>
-    `${etichetta ? `${etichetta} ` : ""}${valore ? e(valore) : '<span class="da-completare">dato da completare</span>'}`;
-  return `<p class="legale">${voce("", imp.ragione_sociale)}<br>${e(imp.indirizzo)}<br>${voce("P.IVA", imp.piva)} · ${voce("C.F.", imp.codice_fiscale)}${
-    imp.rea ? ` · REA ${e(imp.rea)}` : ""}<br>${voce("PEC", imp.pec)}${imp.telefono ? ` · Tel. ${e(imp.telefono)}` : ""}</p>`;
 }
 
 function jsonLd(imp, orari, baseUrl) {
@@ -236,7 +228,7 @@ export function creaRender({ db, now = () => new Date(), cartellaPublic = PUBLIC
       chips: chipsHtml(menu),
       menu: menuHtml(menu),
       dove: doveHtml(imp, orari, chiusure, { data: oggi, now: adesso }),
-      legale: piedeLegale(imp),
+      legale: footerLegale(imp),
       dati: datiBrowser(menu, orari, chiusure, imp, oggi)
     };
     const html = fs.readFileSync(MODELLO, "utf8")
