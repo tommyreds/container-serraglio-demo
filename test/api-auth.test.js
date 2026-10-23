@@ -185,3 +185,10 @@ test("il pannello si apre su /admin, non indicizzato", async () => {
   assert.equal((await fetch(p.base + "/manifest.webmanifest")).status, 200);
   await p.chiudi();
 });
+
+test("le risposte del pannello non finiscono nella cache del browser", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  assert.equal((await p.richiesta("GET", "/api/admin/menu", { cookie: c })).intestazioni.get("cache-control"), "no-store");
+  await p.chiudi();
+});

@@ -97,9 +97,9 @@ function apriProdotto(p, c, dati, ricarica) {
   f.innerHTML = `
     ${nuovo ? "" : `<div class="anteprima" id="anteprima" aria-hidden="true"></div>
     <div class="foto-azioni">
-      <label class="carica-foto"><span class="grosso secondario" aria-hidden="true">${foto ? "Cambia foto" : "Scatta o scegli una foto"}</span>
+      <label class="carica-foto"><span class="grosso secondario" id="etichetta-foto" aria-hidden="true"></span>
         <input type="file" id="file-foto" accept="image/*" capture="environment" aria-label="Scatta o scegli una foto"></label>
-      ${foto ? '<button type="button" class="grosso secondario" id="togli-foto">Rimuovi la foto</button>' : ""}
+      <button type="button" class="grosso secondario" id="togli-foto" hidden>Rimuovi la foto</button>
       <p class="aiuto" id="stato-foto" role="status"></p>
     </div>`}
     ${campo({ id: "nome", etichetta: "Nome", valore: p?.nome || "", attributi: 'maxlength="60" required' })}
@@ -123,9 +123,12 @@ function apriProdotto(p, c, dati, ricarica) {
       ${nuovo ? "" : '<button type="button" class="grosso pericolo" id="elimina-prodotto">Elimina il prodotto</button>'}
     </div>`;
 
+  // anteprima e pulsanti seguono sempre la foto attuale, anche dopo un caricamento
   const aggiornaAnteprima = () => {
     const box = $("#anteprima", f);
     if (box) box.innerHTML = anteprima(p, c, { ...leggiModulo(f), foto });
+    if ($("#etichetta-foto", f)) $("#etichetta-foto", f).textContent = foto ? "Cambia foto" : "Scatta o scegli una foto";
+    if ($("#togli-foto", f)) $("#togli-foto", f).hidden = !foto;
   };
   aggiornaAnteprima();
   f.oninput = aggiornaAnteprima;
@@ -177,8 +180,8 @@ function apriProdotto(p, c, dati, ricarica) {
       foto = null;
       p.foto = null;
       $("#stato-foto", f).textContent = "Foto rimossa: sul sito torna il disegno.";
-      $("#togli-foto", f).remove();
       aggiornaAnteprima();
+      $("#file-foto", f).focus();
       ricarica();
     } catch (err) { erroreEditor(err.message); }
   });

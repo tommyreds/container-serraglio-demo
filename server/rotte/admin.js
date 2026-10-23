@@ -45,11 +45,17 @@ export function rotteAdmin(contesto) {
   const cookie = (valore, maxAge) =>
     `${NOME_COOKIE}=${valore}; HttpOnly;${produzione ? " Secure;" : ""} SameSite=Strict; Path=/; Max-Age=${maxAge}`;
 
+  /* Niente cache: Safari altrimenti riusa la risposta di /menu e il pannello
+     mostra dati vecchi subito dopo un salvataggio. */
+  r.use((req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
+
   /* Le scritture accettano solo JSON (la foto ha la sua rotta, più avanti). */
   r.use((req, res, next) => {
     if (req.method === "GET" || req.method === "HEAD" || req.path.endsWith("/foto")) return next();
-    // req.is() vale null se non c'è corpo (un DELETE del browser): va bene; false se il corpo non è JSON
-    if (req.is("application/json") === false) return res.status(415).json({ errore: "Formato non valido." });
+    // senza corpo va bene (un DELETE del browser; Safari manda anche Content-Length: 0);
+    // con un corpo, deve essere JSON
+    const vuoto = req.headers["content-length"] === "0";
+    if (!vuoto && req.is("application/json") === false) return res.status(415).json({ errore: "Formato non valido." });
     next();
   });
   r.use(express.json({ limit: "32kb" }));

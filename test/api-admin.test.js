@@ -221,3 +221,14 @@ test("interruttori accettano solo vero o falso", async () => {
   assert.equal((await p.chiama("PATCH", "/prodotti/sc1", { disponibile: "boh" })).stato, 400);
   await p.chiudi();
 });
+
+test("DELETE senza corpo come lo manda Safari (Content-Length: 0)", async () => {
+  const p = await conAccesso();
+  await p.chiama("POST", "/chiusure", { data: "2026-10-22" });
+  const { request } = await import("node:http");
+  const stato = await new Promise((ok, ko) => request(`${p.base}/api/admin/chiusure/2026-10-22`, {
+    method: "DELETE", headers: { Cookie: p.cookie, Origin: p.base, "Content-Length": "0" }
+  }, r => { r.resume(); ok(r.statusCode); }).on("error", ko).end());
+  assert.equal(stato, 200);
+  await p.chiudi();
+});
