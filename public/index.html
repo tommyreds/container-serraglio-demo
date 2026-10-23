@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Container Serraglio — il pranzo a due passi dal PIN</title>
+<meta name="description" content="Schiacciate, pinse, hamburgher e hot dog davanti al PIN di Prato. Bevuta e caffè compresi. Via Jean Louise Protche 7/9, Porta al Serraglio.">
+<link rel="icon" href="img/logo-blu.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="testata">
+  <div class="wrap testata-in">
+    <a class="marchio" href="#top">
+      <img src="img/logo-bianco.png" alt="" width="113" height="166">
+      <span>Container Serraglio</span>
+    </a>
+    <nav class="nav">
+      <a href="#top">Home</a>
+      <a href="#menu">Menù</a>
+      <a href="#dove">Dove siamo</a>
+    </nav>
+    <a class="btn btn-azione piccolo" href="#menu">Ordina</a>
+    <button class="menu-mobile" id="apri-nav" aria-label="Apri il menù di navigazione" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <nav class="nav-mobile" id="nav-mobile" hidden>
+    <a href="#top">Home</a>
+    <a href="#menu">Menù</a>
+    <a href="#dove">Dove siamo</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="alone" aria-hidden="true"></div>
+    <div class="wrap hero-griglia">
+      <div class="hero-testo">
+        <p class="occhiello" id="stato"><span class="punto"></span> <span id="stato-testo">Controllo gli orari…</span></p>
+        <h1>Il <em>pranzo</em> tra una lezione<br>e l'altra</h1>
+        <p class="sottotitolo">Schiacciate, pinse, hamburgher e hot dog preparati nel container davanti al PIN. Ogni menù comprende bevuta e caffè.</p>
+        <div class="azioni">
+          <a class="btn btn-azione" href="#menu">Guarda il menù</a>
+          <a class="btn btn-contorno" href="tel:+393270536624">327 053 6624</a>
+        </div>
+        <dl class="numeri">
+          <div><dt>6 €</dt><dd>schiacciate</dd></div>
+          <div><dt>7 €</dt><dd>pinse</dd></div>
+          <div><dt>8 €</dt><dd>burger e primi</dd></div>
+        </dl>
+      </div>
+
+      <div class="hero-foto">
+        <img src="img/p-hamburger.webp" alt="Hamburgher con patatine fritte" width="552" height="400">
+        <span class="bollo bollo-prezzo">8 €</span>
+        <span class="bollo bollo-luogo">A 2 passi dal PIN</span>
+      </div>
+    </div>
+  </section>
+
+
+  <aside class="striscia">
+    <div class="wrap striscia-in">
+      <p>
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Z"/><path d="M16 9h2.5a2.5 2.5 0 0 1 0 5H16"/><path d="M7 2.5v2M11 2.5v2"/>
+        </svg>
+        <span><strong>Bevuta e caffè compresi</strong> in ogni menù, senza sovrapprezzo</span>
+      </p>
+      <p>
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+        </svg>
+        <span><strong>Prezzi della pausa pranzo</strong>, validi dalle 10:00 alle 15:00</span>
+      </p>
+    </div>
+  </aside>
+
+  <section class="menu" id="menu">
+    <div class="wrap">
+      <header class="sezione-testa">
+        <p class="etichetta">Il menù</p>
+        <h2>Scegli, passa, ritira</h2>
+        <p class="sottotitolo">Prezzo unico per categoria: niente conti da fare, scegli quello che ti va.</p>
+      </header>
+
+      <div class="filtri" id="filtri" role="tablist" aria-label="Categorie del menù"></div>
+      <div class="griglia" id="griglia"></div>
+    </div>
+  </section>
+
+  <section class="dove" id="dove">
+    <div class="wrap dove-griglia">
+      <div>
+        <p class="etichetta">Dove siamo</p>
+        <h2>Via Jean Louise Protche 7/9</h2>
+        <p class="sottotitolo">59100 Prato, nell'area del playground del Serraglio. Due minuti a piedi dal polo universitario e dalla stazione di Porta al Serraglio. Si prenota anche da asporto.</p>
+        <div class="azioni">
+          <a class="btn btn-azione" href="https://www.google.com/maps/search/?api=1&query=Via+Jean+Louise+Protche+7,+Prato" target="_blank" rel="noopener">Apri la mappa</a>
+          <a class="btn btn-contorno" href="https://www.instagram.com/containerserraglio/" target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </div>
+      <ul class="orari" id="orari"></ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap piede">
+    <img src="img/logo-bianco.png" alt="Container Serraglio" width="113" height="166">
+    <p>Via Jean Louise Protche 7/9, 59100 Prato<br>327 053 6624</p>
+    <p class="nota">Pagina dimostrativa, non gestita dal locale. Le immagini dei prodotti sono di prova.</p>
+  </div>
+</footer>
+
+<div class="barra-carrello" id="barra" hidden>
+  <strong id="conteggio">0</strong>
+  <span id="totale-barra">€ 0,00</span>
+  <button type="button" id="apri-ordine">Vedi l'ordine</button>
+</div>
+
+<dialog id="ordine" aria-labelledby="titolo-ordine">
+  <div class="dialogo-testa">
+    <h2 id="titolo-ordine">Il tuo ordine</h2>
+    <button class="chiudi" type="button" id="chiudi-ordine" aria-label="Chiudi">&times;</button>
+  </div>
+
+  <div class="dialogo-corpo" id="corpo-ordine">
+    <div id="righe"></div>
+    <div id="campi" hidden>
+      <div class="campo">
+        <label for="nome">Nome per il ritiro</label>
+        <input id="nome" type="text" autocomplete="given-name" maxlength="40" placeholder="Es. Tommi">
+      </div>
+      <div class="campo">
+        <label for="orario">Ora di ritiro</label>
+        <select id="orario"></select>
+      </div>
+      <div class="campo">
+        <label for="note">Note (allergie, senza salse, …)</label>
+        <textarea id="note" maxlength="300" placeholder="Opzionale"></textarea>
+      </div>
+      <p class="minuscolo">Inviando l'ordine accetti che nome, orario e contenuto siano registrati per preparartelo.</p>
+    </div>
+    <p class="avviso-errore" id="errore" hidden></p>
+  </div>
+
+  <div class="dialogo-piede" id="piede-ordine">
+    <div class="totale"><span>Totale</span><span id="totale">€ 0,00</span></div>
+    <button class="btn btn-azione" type="button" id="invia">Invia l'ordine</button>
+    <small>Si paga al ritiro. Dopo l'invio ricevi un codice da dire al banco.</small>
+  </div>
+
+  <div class="conferma" id="conferma" hidden>
+    <h3>Ordine registrato</h3>
+    <p class="codice" id="codice-ordine"></p>
+    <p id="conferma-testo"></p>
+    <a class="btn btn-azione" id="avvisa-whatsapp" href="#" target="_blank" rel="noopener">Avvisa su WhatsApp</a>
+    <button class="btn btn-contorno scuro" type="button" id="nuovo-ordine">Chiudi</button>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "container-serraglio-vetrina",
+  "version": "1.0.0",
+  "description": "Sito di ordinazione per Container Serraglio, Prato — versione vetrina",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js",
+    "seed": "node server/seed.js",
+    "demo": "node demo/server.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "express": "^4.21.1"
+  }
+}

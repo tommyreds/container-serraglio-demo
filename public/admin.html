@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Gestione — Container Serraglio</title>
+<link rel="icon" href="img/logo-blu.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ============ accesso ============ -->
+<section class="accesso" id="accesso">
+  <img src="img/logo-bianco.png" alt="Container Serraglio" width="113" height="166">
+  <h1>Gestione del banco</h1>
+  <p class="guida">Digita il PIN a sei cifre</p>
+
+  <input id="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*"
+         maxlength="6" autocomplete="off" aria-label="PIN di accesso">
+  <p class="errore" id="errore-accesso" hidden></p>
+  <button class="grosso" type="button" id="entra">Entra</button>
+</section>
+
+<!-- ============ pannello ============ -->
+<div id="lavoro" hidden>
+
+  <header class="testata">
+    <span id="titolo-schermata">Oggi</span>
+    <button type="button" id="esci" class="esci">Esci</button>
+  </header>
+
+  <p class="esito" id="esito" hidden></p>
+
+  <!-- ---------- OGGI: le tre cose che cambiano ogni giorno ---------- -->
+  <main class="schermata" id="schermata-oggi">
+
+    <section class="blocco">
+      <h2>Primo piatto di oggi</h2>
+      <p class="guida">Scrivi cosa c'è oggi. Comparirà subito sul sito.</p>
+      <input id="primo" type="text" maxlength="200" placeholder="Es. Pasta al ragù">
+      <button class="grosso" type="button" id="salva-primo">Salva il primo di oggi</button>
+    </section>
+
+    <section class="blocco">
+      <h2>Pezzi arrivati dal panificio</h2>
+      <p class="guida">Quanti ne hai oggi. Quando finiscono, il sito smette di accettarli.</p>
+      <div id="scorte"></div>
+      <button class="grosso secondario" type="button" id="copia-ieri">Come ieri</button>
+    </section>
+
+    <section class="blocco">
+      <h2>Cosa è finito</h2>
+      <p class="guida">Spegni l'interruttore e il prodotto sparisce dal sito.</p>
+      <div id="disponibilita"></div>
+    </section>
+
+  </main>
+
+  <!-- ---------- ORDINI ---------- -->
+  <main class="schermata" id="schermata-ordini" hidden>
+    <section class="blocco">
+      <h2>Ordini di oggi</h2>
+      <div id="ordini"></div>
+    </section>
+  </main>
+
+  <!-- ---------- ALTRO ---------- -->
+  <main class="schermata" id="schermata-altro" hidden>
+    <section class="blocco">
+      <h2>Prezzi</h2>
+      <p class="guida">Prezzo unico per ogni categoria.</p>
+      <div id="prezzi"></div>
+    </section>
+
+    <section class="blocco">
+      <h2>Orari</h2>
+      <p class="guida">Lascia vuoto per indicare un giorno di chiusura.</p>
+      <div id="orari"></div>
+      <button class="grosso" type="button" id="salva-orari">Salva gli orari</button>
+    </section>
+
+    <section class="blocco">
+      <h2>Ordini online</h2>
+      <p class="guida">Se li sospendi il sito resta visibile ma non accetta ordini.</p>
+      <label class="interruttore grande">
+        <input type="checkbox" id="ordini-attivi">
+        <span class="leva"></span>
+        <span class="testo">Accetta ordini dal sito</span>
+      </label>
+    </section>
+
+    <section class="blocco">
+      <h2>Cambia PIN</h2>
+      <p class="guida">Sei cifre, non tutte uguali e non in sequenza.</p>
+      <input id="nuovo-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+             autocomplete="new-password" aria-label="Nuovo PIN">
+      <button class="grosso secondario" type="button" id="cambia-pin">Aggiorna il PIN</button>
+    </section>
+
+    <p class="versione"><a href="index.html">Vedi il sito</a></p>
+  </main>
+
+  <!-- ---------- navigazione in basso, a portata di pollice ---------- -->
+  <nav class="barra-nav" aria-label="Sezioni del pannello">
+    <button type="button" class="attiva" data-schermata="oggi">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg>
+      Oggi
+    </button>
+    <button type="button" data-schermata="ordini">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21Z"/><path d="M9.5 8h5M9.5 12h5"/></svg>
+      Ordini <span class="pallino-ordini" id="pallino-ordini" hidden></span>
+    </button>
+    <button type="button" data-schermata="altro">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a1.7 1.7 0 0 0-1.6-1H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 3 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 3a1.7 1.7 0 0 0 1-1.6V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 15 3a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 9h.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+      Altro
+    </button>
+  </nav>
+
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
