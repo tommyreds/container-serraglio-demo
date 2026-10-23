@@ -4,7 +4,9 @@ import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni, scriviImpostaz
 import { oraRoma } from "../../public/lib/orari.js";
 import { ALLERGENI, validaAllergeni } from "../../public/lib/allergeni.js";
 import { ErroreValidazione, leggiPrezzo, leggiTesto, leggiData, leggiOra, VALIDATORI_IMPOSTAZIONI } from "../valida.js";
+import { tipoImmagine, dimensioniImmagine, salvaFoto, eliminaFoto } from "../foto.js";
 import {
+  creaLimitatore,
   verificaPin, creaHash, pinBanale, creaSessione, leggiSessione, chiudiSessione, chiudiAltreSessioni,
   creaGuardiaLogin, descriviDispositivo, registraAccesso
 } from "../auth.js";
@@ -116,6 +118,7 @@ export function rotteAdmin(contesto) {
     } catch (e) {
       if (e instanceof ErroreValidazione) return res.status(400).json({ errore: e.message });
       if (e instanceof NonTrovato) return res.status(404).json({ errore: e.message });
+      if (e instanceof FormatoFoto) return res.status(415).json({ errore: "Usa una foto JPG, PNG o WebP." });
       next(e);
     }
   }];
@@ -172,7 +175,7 @@ export function rotteAdmin(contesto) {
   r.delete("/prodotti/:id", ...scrive(req => {
     const p = trovaProdotto(req.params.id);
     db.prepare("DELETE FROM prodotti WHERE id = ?").run(p.id);
-    contesto.dopoEliminazione?.(p);
+    eliminaFotoCaricata(p.foto);
   }));
 
   /* Scambia la posizione con il vicino nella stessa categoria. */
@@ -264,8 +267,49 @@ export function rotteAdmin(contesto) {
     db.prepare("UPDATE prodotti SET descrizione = ?, finito_il = NULL WHERE id = ?").run(descrizione, p.id);
   }));
 
+  /* ---------- foto ---------- */
+
+  const limiteFoto = creaLimitatore();
+  const corpoFoto = express.raw({ type: ["image/webp", "image/jpeg", "image/png"], limit: "3mb" });
+  const leggiFoto = (req, res, next) => corpoFoto(req, res, err => {
+    if (err?.type === "entity.too.large") return res.status(413).json({ errore: "La foto è troppo grande (massimo 3 MB)." });
+    next(err);
+  });
+  // le foto caricate stanno in "foto/…"; quelle di esempio in "img/…" non si cancellano
+  function eliminaFotoCaricata(foto) {
+    if (foto?.startsWith("foto/")) eliminaFoto(contesto.cartellaFoto, foto.slice(5));
+  }
+
+  r.put("/prodotti/:id/foto", richiediAccesso, (req, res, next) => {
+    if (!limiteFoto.consenti(req.token, 30, 3600_000)) {
+      return res.status(429).json({ errore: "Troppe foto in poco tempo, riprova fra un po'." });
+    }
+    next();
+  }, leggiFoto, ...scrive(req => {
+    const p = trovaProdotto(req.params.id);
+    const buf = Buffer.isBuffer(req.body) ? req.body : null;
+    const tipo = buf && tipoImmagine(buf);
+    if (!tipo) throw new FormatoFoto();
+    const dim = dimensioniImmagine(buf, tipo);
+    if (!dim || dim.larghezza < 1 || dim.altezza < 1 || dim.larghezza > 4000 || dim.altezza > 4000) {
+      errore("Non riesco a leggere questa foto, provane un'altra.");
+    }
+    const foto = `foto/${salvaFoto(contesto.cartellaFoto, buf, tipo)}`;
+    db.prepare("UPDATE prodotti SET foto = ? WHERE id = ?").run(foto, p.id);
+    eliminaFotoCaricata(p.foto);
+    return { corpo: { ok: true, foto } };
+  }));
+
+  r.delete("/prodotti/:id/foto", ...scrive(req => {
+    const p = trovaProdotto(req.params.id);
+    db.prepare("UPDATE prodotti SET foto = NULL WHERE id = ?").run(p.id);
+    eliminaFotoCaricata(p.foto);
+  }));
+
   return r;
 }
+
+class FormatoFoto extends Error {}
 
 class NonTrovato extends Error {}
 const nonTrovato = messaggio => { throw new NonTrovato(messaggio); };
