@@ -9,6 +9,7 @@
 import { statoApertura, orariRitiro, testoStato } from "./lib/orari.js";
 import { componiMessaggio, linkWhatsApp, euro } from "./lib/whatsapp.js";
 import { escapeHtml as e } from "./lib/escape.js";
+import "./movimento.js";
 
 const $ = (s, dentro = document) => dentro.querySelector(s);
 const $$ = (s, dentro = document) => [...dentro.querySelectorAll(s)];
