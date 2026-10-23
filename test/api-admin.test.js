@@ -232,3 +232,15 @@ test("DELETE senza corpo come lo manda Safari (Content-Length: 0)", async () => 
   assert.equal(stato, 200);
   await p.chiudi();
 });
+
+test("troppe modifiche ravvicinate dalla stessa sessione: 429", async () => {
+  const p = await conAccesso();
+  for (let i = 0; i < 300; i++) {
+    const r = await p.chiama("PUT", "/prodotti/hb/finito", { finito: i % 2 === 0 });
+    assert.equal(r.stato, 200, `scrittura ${i + 1}`);
+  }
+  const r = await p.chiama("PUT", "/prodotti/hb/finito", { finito: true });
+  assert.equal(r.stato, 429);
+  assert.equal(r.json.errore, "Troppe modifiche ravvicinate, aspetta un attimo.");
+  await p.chiudi();
+});

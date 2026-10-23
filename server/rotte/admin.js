@@ -138,7 +138,12 @@ export function rotteAdmin(contesto) {
   const oggi = () => oraRoma(now()).data;
   const invalida = () => contesto.app.locals.invalida();
   // avvolge una rotta: gli errori di validazione diventano 400 con la frase per il titolare
+  // tetto alle modifiche per sessione: ferma uno script, non chi lavora al banco
+  const limiteScritture = creaLimitatore();
   const scrive = fn => [richiediAccesso, (req, res, next) => {
+    if (!limiteScritture.consenti(req.token, 300, 15 * 60_000)) {
+      return res.status(429).json({ errore: "Troppe modifiche ravvicinate, aspetta un attimo." });
+    }
     try {
       const esito = fn(req, res);
       if (!res.headersSent) { invalida(); res.status(esito?.stato || 200).json(esito?.corpo || { ok: true }); }
