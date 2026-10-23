@@ -284,10 +284,21 @@ export function rotteAdmin(contesto) {
     db.transaction(() => puliti.forEach(([a, c], i) => agg.run(a, c, i)))();
   }));
 
+  /* "Oggi siamo chiusi": la data la decide il server, così un pannello rimasto
+     aperto da ieri sul telefono non chiude il giorno sbagliato. */
+  r.post("/chiusure/oggi", ...scrive(() => {
+    db.prepare("INSERT INTO chiusure (data, motivo) VALUES (?, '') ON CONFLICT(data) DO NOTHING").run(oggi());
+  }));
+  r.delete("/chiusure/oggi", ...scrive(() => {
+    db.prepare("DELETE FROM chiusure WHERE data = ?").run(oggi());
+  }));
+
   r.post("/chiusure", ...scrive(req => {
+    const data = leggiData(req.body?.data);
+    if (data < oggi()) errore("Quel giorno è già passato.");
     db.prepare(`INSERT INTO chiusure (data, motivo) VALUES (?, ?)
                 ON CONFLICT(data) DO UPDATE SET motivo = excluded.motivo`)
-      .run(leggiData(req.body?.data), leggiTesto(req.body?.motivo ?? "", { max: 60, campo: "Motivo" }));
+      .run(data, leggiTesto(req.body?.motivo ?? "", { max: 60, campo: "Motivo" }));
   }));
 
   r.delete("/chiusure/:data", ...scrive(req => {
@@ -298,7 +309,11 @@ export function rotteAdmin(contesto) {
     const voci = Object.entries(req.body || {}).filter(([k]) => Object.hasOwn(VALIDATORI_IMPOSTAZIONI, k));
     if (voci.length === 0) errore("Nessuna impostazione da salvare.");
     const pulite = voci.map(([k, v]) => [k, VALIDATORI_IMPOSTAZIONI[k](v)]);   // tutto o niente
-    if (pulite.some(([k]) => k === "google_voto" || k === "google_recensioni")) pulite.push(["google_aggiornato", oggi()]);
+    // "aggiornato il" solo se voto o recensioni cambiano davvero: salvare il link non rinfresca la data
+    const attuali = leggiImpostazioni(db, { tutte: true });
+    if (pulite.some(([k, v]) => (k === "google_voto" || k === "google_recensioni") && v !== (attuali[k] ?? ""))) {
+      pulite.push(["google_aggiornato", oggi()]);
+    }
     db.transaction(() => pulite.forEach(([k, v]) => scriviImpostazione(db, k, v)))();
   }));
 

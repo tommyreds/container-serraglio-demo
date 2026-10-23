@@ -10,4 +10,5 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
-ReadWritePaths=/srv/container-serraglio/backup
+# anche dati/: sqlite3 .backup su un database WAL deve poter aprire il file -shm
+ReadWritePaths=/srv/container-serraglio/backup /srv/container-serraglio/dati

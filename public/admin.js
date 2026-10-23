@@ -141,8 +141,8 @@ function disegnaOggi(el) {
 
   $("#chiuso-oggi", el).addEventListener("click", async () => {
     const ok = await salva(() => chiusoOggi
-      ? api("DELETE", `/chiusure/${oggi}`)
-      : api("POST", "/chiusure", { data: oggi, motivo: "" }), chiusoOggi ? "Riaperto per oggi" : "Chiuso per oggi");
+      ? api("DELETE", "/chiusure/oggi")
+      : api("POST", "/chiusure/oggi", {}), chiusoOggi ? "Riaperto per oggi" : "Chiuso per oggi");
     if (ok) await ricarica();
     $("#chiuso-oggi")?.focus();
   });
@@ -165,6 +165,14 @@ function disegnaOggi(el) {
     });
   }
 }
+
+/* Il telefono del titolare tiene il pannello aperto per giorni: tornando
+   sulla scheda si rileggono i dati, così "oggi" è davvero oggi. */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !$("#lavoro").hidden && !$$("dialog[open]").length) {
+    ricarica().catch(() => {});
+  }
+});
 
 /* ---------- avvio ---------- */
 

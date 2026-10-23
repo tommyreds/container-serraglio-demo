@@ -26,7 +26,7 @@ export function componiMessaggio({ nome, ora, righe, note, demo }) {
   return [
     `${demo ? "[DEMO] " : ""}Ciao! Ordine per il ritiro alle ${ora}`,
     `Nome: ${pulisci(nome, 40)}`,
-    ...righe.map(r => `• ${r.quantita}× ${r.nome} — ${euro(r.prezzo * r.quantita)}`),
+    ...righe.map(r => `• ${r.quantita}× ${pulisci(r.nome, 60)} — ${euro(r.prezzo * r.quantita)}`),
     `Totale: ${euro(totale)} (pago al ritiro)`,
     ...(pulite ? [`Note: ${pulite}`] : [])
   ].join("\n");

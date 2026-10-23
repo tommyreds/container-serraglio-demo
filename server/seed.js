@@ -1,8 +1,10 @@
-/* Popolamento del database con il menù del locale.
-   Si esegue con: npm run seed            (PIN da ADMIN_PIN o 246810)
-             o:   npm run seed -- --pin=482915
-   Riscrive menù, orari e impostazioni. Non tocca un PIN già impostato e non
-   cancella le chiusure straordinarie. */
+/* Preparazione del database con il menù di partenza.
+     npm run seed                        database nuovo, PIN casuale stampato
+     npm run seed -- --pin=NNNNNN        database nuovo con un PIN scelto
+     npm run seed -- --pin=NNNNNN --solo-pin     cambia solo il PIN
+     npm run seed -- --ricomincia        rimette il menù di partenza (CANCELLA menù e impostazioni)
+   Su un database già in uso il seed si rifiuta senza --ricomincia: così chi
+   voleva solo cambiare il PIN non cancella per sbaglio il menù del locale. */
 
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -134,6 +136,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     reimpostaPin(db, pin);
     console.log("PIN cambiato. Tutti i dispositivi dovranno rifare l'accesso.");
     process.exit(0);
+  }
+  const inUso = db.prepare("SELECT 1 FROM utenti WHERE nome = 'banco'").get();
+  if (inUso && !process.argv.includes("--ricomincia")) {
+    console.error("Questo database è già in uso: non lo riscrivo.");
+    console.error("  Per cambiare il PIN:          npm run seed -- --pin=NNNNNN --solo-pin");
+    console.error("  Per rimettere il menù iniziale (cancella menù e impostazioni): npm run seed -- --ricomincia");
+    process.exit(1);
   }
   const { pin: creato } = semina(db, { pin });
   console.log(`Caricate ${CATEGORIE.length} categorie e ${PRODOTTI.length} prodotti.`);

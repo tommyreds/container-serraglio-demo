@@ -244,3 +244,33 @@ test("troppe modifiche ravvicinate dalla stessa sessione: 429", async () => {
   assert.equal(r.json.errore, "Troppe modifiche ravvicinate, aspetta un attimo.");
   await p.chiudi();
 });
+
+/* ---------- dalla revisione finale ---------- */
+
+test("chiuso oggi: la data la decide il server, non il telefono", async () => {
+  const p = await conAccesso();
+  assert.equal((await p.chiama("POST", "/chiusure/oggi", {})).stato, 200);
+  assert.deepEqual((await p.richiesta("GET", "/api/menu")).json.chiusure.map(c => c.data), ["2026-10-22"]);
+  assert.equal((await p.chiama("DELETE", "/chiusure/oggi")).stato, 200);
+  assert.deepEqual((await p.richiesta("GET", "/api/menu")).json.chiusure, []);
+  await p.chiudi();
+});
+
+test("una chiusura nel passato viene rifiutata", async () => {
+  const p = await conAccesso();
+  const r = await p.chiama("POST", "/chiusure", { data: "2026-10-21" });
+  assert.equal(r.stato, 400);
+  assert.equal(r.json.errore, "Quel giorno è già passato.");
+  await p.chiudi();
+});
+
+test("salvare solo il link Google non cambia la data del voto", async () => {
+  const p = await conAccesso();
+  await p.chiama("PATCH", "/impostazioni", { google_voto: "4,7", google_recensioni: "120" });
+  p.db.prepare("UPDATE impostazioni SET valore = '2026-01-01' WHERE chiave = 'google_aggiornato'").run();
+  await p.chiama("PATCH", "/impostazioni", { google_voto: "4.7", google_recensioni: "120", google_link: "https://maps.app.goo.gl/x" });
+  assert.equal((await p.chiama("GET", "/menu")).json.impostazioni.google_aggiornato, "2026-01-01");
+  await p.chiama("PATCH", "/impostazioni", { google_voto: "4,8" });
+  assert.equal((await p.chiama("GET", "/menu")).json.impostazioni.google_aggiornato, "2026-10-22");
+  await p.chiudi();
+});

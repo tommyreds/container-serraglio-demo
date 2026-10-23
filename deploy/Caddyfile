@@ -1,5 +1,6 @@
 # Caddy davanti al sito: HTTPS automatico (Let's Encrypt), compressione,
-# HSTS e registro delle richieste con IP accorciato, tenuto 7 giorni.
+# HSTS e registro delle richieste con IP accorciato. Il registro ruota ogni
+# giorno e i file più vecchi di 7 giorni vengono cancellati (logrotate).
 # {$DOMINIO} viene sostituito da setup.sh.
 
 {$DOMINIO} {
@@ -13,8 +14,9 @@
 	reverse_proxy 127.0.0.1:3000
 
 	log {
+		# la rotazione la fa logrotate ogni giorno (deploy/logrotate): 7 giorni e poi via
 		output file /var/log/caddy/serraglio.log {
-			roll_keep_for 168h
+			roll_disabled
 		}
 		format filter {
 			request>remote_ip ip_mask 24 48

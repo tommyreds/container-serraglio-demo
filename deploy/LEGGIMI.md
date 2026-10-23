@@ -53,6 +53,14 @@ computer:
 rsync -a root@IP-DEL-VPS:/srv/container-serraglio/backup/ ./backup-serraglio/
 ```
 
+Dopo la preparazione, controlla una volta che la copia notturna funzioni
+davvero dentro il suo servizio:
+
+```bash
+systemctl start container-serraglio-backup && journalctl -u container-serraglio-backup -n 5
+ls -l /srv/container-serraglio/backup/
+```
+
 Ripristino:
 
 ```bash

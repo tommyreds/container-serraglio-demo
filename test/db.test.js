@@ -99,3 +99,25 @@ test("senza PIN indicato il seed ne sceglie uno casuale non banale", async () =>
   assert.ok(verificaPin(pin, u.hash, u.sale));
   assert.throws(() => semina(apriDb(":memory:"), { pin: "123456" }), /PIN/);
 });
+
+test("rilanciare il seed su un database già usato non cancella niente", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const cartella = fs.mkdtempSync(path.join(os.tmpdir(), "seed-"));
+  const env = { ...process.env, DB_PATH: path.join(cartella, "x.db") };
+  assert.equal(spawnSync(process.execPath, ["server/seed.js", "--pin=730194"], { env }).status, 0);
+  const { apriDb } = await import("../server/db.js");
+  let db = apriDb(env.DB_PATH);
+  db.prepare("UPDATE prodotti SET nome = 'Del titolare' WHERE id = 'sc1'").run();
+  db.close();
+  const r = spawnSync(process.execPath, ["server/seed.js", "--pin=730194"], { env, encoding: "utf8" });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /--solo-pin/);
+  db = apriDb(env.DB_PATH);
+  assert.equal(db.prepare("SELECT nome FROM prodotti WHERE id = 'sc1'").get().nome, "Del titolare");
+  db.close();
+  assert.equal(spawnSync(process.execPath, ["server/seed.js", "--pin=730194", "--solo-pin"], { env }).status, 0);
+  fs.rmSync(cartella, { recursive: true, force: true });
+});

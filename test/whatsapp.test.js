@@ -53,3 +53,8 @@ test("accenti, emoji e simboli arrivano intatti", () => {
   assert.ok(testo.includes("Caffè & <b>emoji 🍕</b>"));
   assert.ok(testo.includes("Nome: Niccolò"));
 });
+
+test("anche i nomi dei prodotti non attivano la formattazione di WhatsApp", () => {
+  const m = componiMessaggio({ nome: "Ada", ora: "12:00", note: "", demo: false, righe: [{ nome: "Panino *speciale* _vero_", quantita: 1, prezzo: 6 }] });
+  assert.ok(m.includes("1× Panino speciale vero —"));
+});

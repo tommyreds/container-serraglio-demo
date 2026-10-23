@@ -1,0 +1,12 @@
+# Registro delle richieste di Caddy: un file al giorno, cancellato dopo 7 giorni
+# (è quello che promette la pagina Privacy del sito).
+/var/log/caddy/serraglio.log {
+    daily
+    rotate 7
+    maxage 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}

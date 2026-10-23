@@ -61,6 +61,8 @@ const righe = () => Object.entries(vassoio).map(([id, quantita]) => ({ id, quant
 const pezzi = () => righe().reduce((a, r) => a + r.quantita, 0);
 const totale = () => righe().reduce((a, r) => a + r.quantita * r.prezzo_finale, 0);
 const contaPezzi = n => `${n} ${n === 1 ? "pezzo" : "pezzi"}`;
+// 0 è un valore valido (es. nessun anticipo): non va confuso con "mancante"
+const numeroO = (v, predefinito) => (v === "" || v === undefined || v === null || !Number.isFinite(Number(v)) ? predefinito : Number(v));
 
 function annuncia(testo) {
   // con un foglio aperto il resto della pagina è inerte: si parla da dentro il foglio
@@ -158,7 +160,7 @@ function aggiornaTutto() {
 function fasce() {
   return orariRitiro({
     orari, chiusure, now: adesso(),
-    anticipo: Number(imp.anticipo_minimo) || 15, passo: Number(imp.passo_fascia) || 10
+    anticipo: numeroO(imp.anticipo_minimo, 15), passo: numeroO(imp.passo_fascia, 10) || 10
   });
 }
 
@@ -407,6 +409,10 @@ if ("IntersectionObserver" in window) {
 
 /* ---------- avvio ---------- */
 
-if (ripulisci()) avvisa(TOLTI);
+if (ripulisci()) {
+  avvisa(TOLTI);
+  // se il vassoio è rimasto vuoto la barra sparisce: l'avviso va anche sulla pagina
+  if (!pezzi()) requestAnimationFrame(() => { $("#avviso-pagina").textContent = TOLTI; });
+}
 aggiornaTutto();
 aggiornaStato();

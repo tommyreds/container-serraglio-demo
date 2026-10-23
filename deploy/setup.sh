@@ -25,7 +25,7 @@ passo "Pacchetti di base"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get install -y -q curl git sqlite3 ca-certificates gnupg debian-keyring debian-archive-keyring \
-  apt-transport-https build-essential python3 ufw fail2ban unattended-upgrades sudo
+  apt-transport-https build-essential python3 ufw fail2ban unattended-upgrades sudo logrotate
 
 passo "Node.js LTS (NodeSource)"
 if ! command -v node >/dev/null || (( $(node -p "process.versions.node.split('.')[0]") < 22 )); then
@@ -83,6 +83,7 @@ fi
 passo "Caddy: HTTPS per $DOMINIO"
 sed "s/{\$DOMINIO}/$DOMINIO/g" "$APP/deploy/Caddyfile" > /etc/caddy/Caddyfile
 mkdir -p /var/log/caddy && chown caddy:caddy /var/log/caddy 2>/dev/null || true
+install -m 644 "$APP/deploy/logrotate" /etc/logrotate.d/container-serraglio
 
 if [[ "$SENZA_SYSTEMD" == "1" ]]; then
   passo "SENZA_SYSTEMD=1: salto systemd, firewall e SSH"

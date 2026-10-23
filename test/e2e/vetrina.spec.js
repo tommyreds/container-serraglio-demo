@@ -182,3 +182,27 @@ test("svuotato il vassoio, il focus torna al menù", async ({ page }) => {
   await page.locator("#svuota-si").click();
   await expect(page.locator("#titolo-menu")).toBeFocused();
 });
+
+/* ---------- dalla revisione finale ---------- */
+
+test("vassoio vecchio del tutto svuotato: l'avviso si vede comunque", async ({ page }) => {
+  await page.clock.setFixedTime(VENERDI_MEZZOGIORNO);
+  await page.addInitScript(() => localStorage.setItem("cs-vassoio", JSON.stringify({ nonesiste: 2 })));
+  await page.goto("/");
+  await expect(page.locator("#barra-vassoio")).toBeHidden();
+  await expect(page.locator("#avviso-pagina")).toHaveText("Alcuni prodotti non sono più disponibili e li abbiamo tolti dal vassoio.");
+});
+
+test("anticipo minimo a 0: si può ritirare al prossimo orario", async ({ page, request }) => {
+  const r = await request.post("/api/admin/login", { data: { pin: "482915" }, headers: { Origin: "http://127.0.0.1:3100" } });
+  expect(r.ok()).toBeTruthy();
+  const imposta = v => request.fetch("/api/admin/impostazioni", { method: "PATCH", data: { anticipo_minimo: v }, headers: { Origin: "http://127.0.0.1:3100" } });
+  await imposta("0");
+  try {
+    await page.clock.setFixedTime(new Date("2026-10-23T12:01:00+02:00"));
+    await page.goto("/");
+    await scheda(page, "sc1").locator(".piu").click();
+    await page.locator("#barra-vassoio").click();
+    await expect(page.locator("#ora-ritiro option").first()).toHaveText("12:10");
+  } finally { await imposta("15"); }
+});
