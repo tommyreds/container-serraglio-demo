@@ -19,6 +19,7 @@ export async function avviaProva({ now = () => new Date(), db = dbDiProva(), pro
   const cartellaFoto = fs.mkdtempSync(path.join(os.tmpdir(), "serraglio-foto-"));
   const app = creaApp({ db, now, produzione, cartellaFoto });
   const server = await new Promise(ok => { const s = app.listen(0, "127.0.0.1", () => ok(s)); });
+  server.unref();   // un test fallito prima di chiudi() non deve bloccare la suite
   const base = `http://127.0.0.1:${server.address().port}`;
 
   async function richiesta(metodo, percorso, { corpo, cookie, origine = base, tipo, grezzo } = {}) {
