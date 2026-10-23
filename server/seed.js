@@ -7,7 +7,8 @@
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { apriDb } from "./db.js";
-import { creaHash } from "./auth.js";
+import crypto from "node:crypto";
+import { creaHash, pinBanale } from "./auth.js";
 
 const CATEGORIE = [
   { id: "schiacciate", nome: "Schiacciate", prezzo: 6, posizione: 1, nota: "Bevuta e caffè compresi" },
@@ -63,7 +64,18 @@ const IMPOSTAZIONI = {
   modalita_demo: "1"
 };
 
-export function semina(db, { pin }) {
+/* PIN casuale di sei cifre, scartando quelli facili da indovinare. */
+export function pinCasuale() {
+  let pin;
+  do { pin = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0"); } while (pinBanale(pin));
+  return pin;
+}
+
+/* Restituisce { pin } se ha creato l'utente del banco (il PIN da comunicare),
+   { pin: null } se l'utente c'era già e il PIN non è stato toccato. */
+export function semina(db, { pin } = {}) {
+  if (pin !== undefined && pinBanale(pin)) throw new Error("PIN troppo facile: niente cifre uguali o in sequenza.");
+  let creato = null;
   db.transaction(() => {
     db.prepare("DELETE FROM prodotti").run();
     db.prepare("DELETE FROM categorie").run();
@@ -85,15 +97,18 @@ export function semina(db, { pin }) {
     Object.entries(IMPOSTAZIONI).forEach(([k, v]) => imp.run(k, v));
 
     if (!db.prepare("SELECT 1 FROM utenti WHERE nome = 'banco'").get()) {
-      const { hash, sale } = creaHash(pin);
+      creato = pin ?? pinCasuale();
+      const { hash, sale } = creaHash(creato);
       db.prepare("INSERT INTO utenti (nome, hash, sale) VALUES ('banco', ?, ?)").run(hash, sale);
     }
   })();
+  return { pin: creato };
 }
 
 /* PIN dimenticato o accesso bloccato: dal server si reimposta senza
    toccare il menù, e tutti i dispositivi devono rientrare. */
 export function reimpostaPin(db, pin) {
+  if (pinBanale(pin)) throw new Error("PIN troppo facile: niente cifre uguali o in sequenza.");
   const { hash, sale } = creaHash(pin);
   db.transaction(() => {
     db.prepare("UPDATE utenti SET hash = ?, sale = ? WHERE nome = 'banco'").run(hash, sale);
@@ -102,14 +117,15 @@ export function reimpostaPin(db, pin) {
 }
 
 /* ---------- uso da riga di comando ----------
-   npm run seed -- --pin=NNNNNN                  popola il database
+   npm run seed                                  popola il database (PIN casuale, stampato)
+   npm run seed -- --pin=NNNNNN                  ... con un PIN scelto
    npm run seed -- --pin=NNNNNN --solo-pin       cambia solo il PIN */
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const qui = path.dirname(fileURLToPath(import.meta.url));
   const argomento = process.argv.find(a => a.startsWith("--pin="));
-  const pin = argomento ? argomento.slice(6) : (process.env.ADMIN_PIN || "246810");
-  if (!/^\d{6}$/.test(pin)) {
-    console.error("Il PIN deve essere di sei cifre.");
+  const pin = argomento ? argomento.slice(6) : (process.env.ADMIN_PIN || undefined);
+  if (pin !== undefined && (!/^\d{6}$/.test(pin) || pinBanale(pin))) {
+    console.error("Il PIN deve essere di sei cifre, non tutte uguali e non in sequenza.");
     process.exit(1);
   }
   const db = apriDb(process.env.DB_PATH || path.join(qui, "..", "dati", "container.db"));
@@ -119,8 +135,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     console.log("PIN cambiato. Tutti i dispositivi dovranno rifare l'accesso.");
     process.exit(0);
   }
-  const nuovo = !db.prepare("SELECT 1 FROM utenti WHERE nome = 'banco'").get();
-  semina(db, { pin });
+  const { pin: creato } = semina(db, { pin });
   console.log(`Caricate ${CATEGORIE.length} categorie e ${PRODOTTI.length} prodotti.`);
-  if (nuovo) console.log(`Utente "banco" creato con PIN ${pin}. Cambialo dal pannello prima di andare online.`);
+  if (creato) console.log(`Utente "banco" creato. PIN del pannello: ${creato}  (scrivilo da qualche parte)`);
 }

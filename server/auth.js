@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import net from "node:net";
 
 /* ---------- PIN di accesso ----------
    Il pannello si apre con un PIN numerico invece che con una password: dal
@@ -37,6 +38,7 @@ export function pinBanale(pin) {
    non deve rifare l'accesso ogni mattina sul proprio telefono.            */
 
 const DURATA_MS = 30 * 24 * 3600_000;
+const DURATA_MASSIMA_MS = 90 * 24 * 3600_000;   // anche se usata ogni giorno: poi si rifà l'accesso
 
 export const hashToken = token => crypto.createHash("sha256").update(String(token)).digest("hex");
 
@@ -53,9 +55,9 @@ export function creaSessione(db, { utente, dispositivo, now }) {
 export function leggiSessione(db, token, now) {
   if (!token) return null;
   const token_hash = hashToken(token);
-  const s = db.prepare("SELECT utente, scade_il FROM sessioni WHERE token_hash = ?").get(token_hash);
+  const s = db.prepare("SELECT utente, scade_il, creato_il FROM sessioni WHERE token_hash = ?").get(token_hash);
   if (!s) return null;
-  if (new Date(s.scade_il) <= now) {
+  if (new Date(s.scade_il) <= now || now - new Date(s.creato_il) >= DURATA_MASSIMA_MS) {
     db.prepare("DELETE FROM sessioni WHERE token_hash = ?").run(token_hash);
     return null;
   }
@@ -137,13 +139,14 @@ export function creaGuardiaLogin({ now = Date.now, fidato = () => false } = {}) 
 
 export function troncaIp(ip) {
   const s = String(ip || "");
+  if (!net.isIP(s.replace(/^::ffff:/i, ""))) return "";
   const v4 = s.match(/^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.\d+$/i);
   if (v4) return `${v4[1]}.${v4[2]}.${v4[3]}.0`;
   if (!s.includes(":")) return "";
   const [testa, coda = ""] = s.split("::");
   const a = testa ? testa.split(":") : [];
   const b = coda ? coda.split(":") : [];
-  const gruppi = s.includes("::") ? [...a, ...Array(8 - a.length - b.length).fill("0"), ...b] : a;
+  const gruppi = s.includes("::") ? [...a, ...Array(Math.max(0, 8 - a.length - b.length)).fill("0"), ...b] : a;
   return `${gruppi.slice(0, 3).map(g => g.replace(/^0+(?=.)/, "")).join(":")}::`;
 }
 

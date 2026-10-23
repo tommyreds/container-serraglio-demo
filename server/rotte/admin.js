@@ -1,5 +1,6 @@
 import express from "express";
 import crypto from "node:crypto";
+import net from "node:net";
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni, scriviImpostazione } from "../db.js";
 import { oraRoma } from "../../public/lib/orari.js";
 import { ALLERGENI, validaAllergeni } from "../../public/lib/allergeni.js";
@@ -32,18 +33,24 @@ export function rotteAdmin(contesto) {
   });
   const MESSAGGI_BLOCCO = {
     ip: ["Troppi tentativi. Riprova fra un quarto d'ora.", 15 * 60],
-    globale: ["Troppi tentativi sbagliati da più dispositivi: l'accesso è sospeso per un'ora. Se sei del locale, riprova dal wifi del locale.", 60 * 60]
+    globale: ["Troppi tentativi sbagliati da più dispositivi: l'accesso è sospeso per un'ora. Se sei del locale, riprova dal wifi del locale o chiedi a chi gestisce il sito di reimpostare il PIN.", 60 * 60]
   };
   const respingiSeBloccato = (req, res) => {
-    const motivo = guardia.motivo(req.ip || "");
+    const motivo = guardia.motivo(ipDi(req));
     if (!motivo) return false;
     const [errore, secondi] = MESSAGGI_BLOCCO[motivo];
     res.set("Retry-After", String(secondi)).status(429).json({ errore });
     return true;
   };
-  const NOME_COOKIE = produzione ? "__Host-sessione" : "sessione";
-  const cookie = (valore, maxAge) =>
-    `${NOME_COOKIE}=${valore}; HttpOnly;${produzione ? " Secure;" : ""} SameSite=Strict; Path=/; Max-Age=${maxAge}`;
+  /* In produzione, o quando la richiesta arriva in https (anche dal tunnel),
+     il cookie è __Host- e Secure. Solo in prova su http locale resta semplice. */
+  const sicuro = req => produzione || req.secure;
+  const nomeCookie = req => (sicuro(req) ? "__Host-sessione" : "sessione");
+  const cookie = (req, valore, maxAge) =>
+    `${nomeCookie(req)}=${valore}; HttpOnly;${sicuro(req) ? " Secure;" : ""} SameSite=Strict; Path=/; Max-Age=${maxAge}`;
+  const tokenDi = req => leggiCookie(req, "__Host-sessione") ?? (produzione ? null : leggiCookie(req, "sessione"));
+  // req.ip può arrivare da un'intestazione: se non è un IP valido si usa quello della connessione
+  const ipDi = req => (net.isIP(req.ip || "") ? req.ip : req.socket.remoteAddress || "");
 
   /* Niente cache: Safari altrimenti riusa la risposta di /menu e il pannello
      mostra dati vecchi subito dopo un salvataggio. */
@@ -61,7 +68,7 @@ export function rotteAdmin(contesto) {
   r.use(express.json({ limit: "32kb" }));
 
   const richiediAccesso = (req, res, next) => {
-    const token = leggiCookie(req, NOME_COOKIE);
+    const token = tokenDi(req);
     const s = leggiSessione(db, token, now());
     if (!s) return res.status(401).json({ errore: "Sessione scaduta, rifai l'accesso." });
     req.utente = s.utente;
@@ -73,7 +80,7 @@ export function rotteAdmin(contesto) {
   /* ---------- accesso ---------- */
 
   r.post("/login", (req, res) => {
-    const ip = req.ip || "";
+    const ip = ipDi(req);
     if (respingiSeBloccato(req, res)) return;
 
     const pin = String(req.body?.pin ?? "").slice(0, 12);
@@ -88,19 +95,19 @@ export function rotteAdmin(contesto) {
     guardia.riuscito(ip);
     registraAccesso(db, { esito: "ok", dispositivo, ip, now: now() });
     const token = creaSessione(db, { utente: utente.nome, dispositivo, now: now() });
-    res.setHeader("Set-Cookie", cookie(token, DURATA_COOKIE_S));
+    res.setHeader("Set-Cookie", cookie(req, token, DURATA_COOKIE_S));
     res.json({ ok: true });
   });
 
   r.post("/logout", richiediAccesso, (req, res) => {
     chiudiSessione(db, req.token);
-    res.setHeader("Set-Cookie", cookie("", 0));
+    res.setHeader("Set-Cookie", cookie(req, "", 0));
     res.json({ ok: true });
   });
 
   r.post("/logout-tutti", richiediAccesso, (req, res) => {
     db.prepare("DELETE FROM sessioni WHERE utente = ?").run(req.utente);
-    res.setHeader("Set-Cookie", cookie("", 0));
+    res.setHeader("Set-Cookie", cookie(req, "", 0));
     res.json({ ok: true });
   });
 
@@ -108,7 +115,7 @@ export function rotteAdmin(contesto) {
 
   // all'apertura del pannello: risponde sempre 200, così la console resta pulita
   r.get("/sessione", (req, res) => {
-    res.json({ dentro: !!leggiSessione(db, leggiCookie(req, NOME_COOKIE), now()) });
+    res.json({ dentro: !!leggiSessione(db, tokenDi(req), now()) });
   });
 
   r.post("/pin", richiediAccesso, (req, res) => {
@@ -116,8 +123,8 @@ export function rotteAdmin(contesto) {
     if (respingiSeBloccato(req, res)) return;
     const utente = db.prepare("SELECT * FROM utenti WHERE nome = ?").get(req.utente);
     if (!verificaPin(String(req.body?.attuale ?? "").slice(0, 12), utente.hash, utente.sale)) {
-      guardia.fallito(req.ip || "");
-      registraAccesso(db, { esito: "ko", dispositivo: descriviDispositivo(req.get("user-agent")), ip: req.ip, now: now() });
+      guardia.fallito(ipDi(req));
+      registraAccesso(db, { esito: "ko", dispositivo: descriviDispositivo(req.get("user-agent")), ip: ipDi(req), now: now() });
       return res.status(401).json({ errore: "Il PIN attuale non è giusto." });
     }
     const nuovo = String(req.body?.nuovo ?? "");

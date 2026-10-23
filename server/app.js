@@ -39,11 +39,13 @@ function soloStessaOrigine(req, res, next) {
 
 export function creaApp({
   db, now = () => new Date(), produzione = false,
-  cartellaFoto, cartellaPublic = path.join(qui, "..", "public"), baseUrl = ""
+  cartellaFoto, cartellaPublic = path.join(qui, "..", "public"), baseUrl = "", trustProxy = "loopback"
 }) {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", 1);   // dietro Caddy: req.ip è quello del visitatore
+  /* Si crede a X-Forwarded-For solo se a parlare è un proxy su questa macchina
+     (Caddy, cloudflared). Chi si collega direttamente non può fingersi un altro IP. */
+  app.set("trust proxy", trustProxy === "0" ? false : trustProxy);
   const render = creaRender({ db, now, cartellaPublic, cartellaFoto, baseUrl });
   app.locals.invalida = render.invalida;
 

@@ -200,3 +200,42 @@ test("/sessione dice se si è dentro senza errori in console", async () => {
   assert.deepEqual((await p.richiesta("GET", "/api/admin/sessione", { cookie: c })).json, { dentro: true });
   await p.chiudi();
 });
+
+/* ---------- dalla revisione di sicurezza ---------- */
+
+test("senza proxy fidato, X-Forwarded-For non aggira il limite per IP", async () => {
+  const p = await avviaProva({ trustProxy: false });
+  const { request } = await import("node:http");
+  const prova = n => new Promise((ok, ko) => {
+    const r = request(`${p.base}/api/admin/login`, { method: "POST", headers: {
+      Origin: p.base, "Content-Type": "application/json", "X-Forwarded-For": `9.9.9.${n}` } }, res => { res.resume(); ok(res.statusCode); });
+    r.on("error", ko); r.end(JSON.stringify({ pin: "000000" }));
+  });
+  for (let i = 0; i < 5; i++) assert.equal(await prova(i), 401);
+  assert.equal(await prova(99), 429);
+  await p.chiudi();
+});
+
+test("intestazione IP malformata: nessun 500", async () => {
+  const p = await avviaProva();
+  const { request } = await import("node:http");
+  const stato = await new Promise((ok, ko) => {
+    const r = request(`${p.base}/api/admin/login`, { method: "POST", headers: {
+      Origin: p.base, "Content-Type": "application/json", "X-Forwarded-For": "1:2:3:4:5:6:7:8:9::1" } }, res => { res.resume(); ok(res.statusCode); });
+    r.on("error", ko); r.end(JSON.stringify({ pin: PIN_PROVA }));
+  });
+  assert.equal(stato, 200);
+  await p.chiudi();
+});
+
+test("su https (tunnel) il cookie è Secure anche fuori dalla produzione", async () => {
+  const p = await avviaProva();
+  const { request } = await import("node:http");
+  const cookie = await new Promise((ok, ko) => {
+    const r = request(`${p.base}/api/admin/login`, { method: "POST", headers: {
+      Origin: p.base, "Content-Type": "application/json", "X-Forwarded-Proto": "https" } }, res => { res.resume(); ok(res.headers["set-cookie"][0]); });
+    r.on("error", ko); r.end(JSON.stringify({ pin: PIN_PROVA }));
+  });
+  assert.match(cookie, /^__Host-sessione=.*; Secure;/);
+  await p.chiudi();
+});

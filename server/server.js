@@ -7,10 +7,14 @@ import { fileURLToPath } from "node:url";
 import { apriDb } from "./db.js";
 import { verificaPin } from "./auth.js";
 import { creaApp } from "./app.js";
+import { controlliAvvio } from "./avvio.js";
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const PRODUZIONE = process.env.NODE_ENV === "production";
 const PORTA = Number(process.env.PORT) || 3000;
+// in ascolto solo su questo computer, salvo richiesta esplicita (es. hotspot: HOST=0.0.0.0)
+const HOST = process.env.HOST || "127.0.0.1";
+const BASE_URL = (process.env.BASE_URL || "").replace(/[/]+$/, "");
 const dati = path.join(qui, "..", "dati");
 const db = apriDb(process.env.DB_PATH || path.join(dati, "container.db"));
 const cartellaFoto = process.env.FOTO_DIR || path.join(dati, "foto");
@@ -21,17 +25,17 @@ if (!utente) {
   console.error("Database vuoto: esegui prima  npm run seed");
   process.exit(1);
 }
-if (PRODUZIONE && !/^https:\/\/[^/]+$/.test((process.env.BASE_URL || "").replace(/[/]+$/, ""))) {
-  console.error("In produzione serve BASE_URL con https, es. BASE_URL=https://containerserraglio.it");
-  process.exit(1);
-}
-if (PRODUZIONE && verificaPin("246810", utente.hash, utente.sale)) {
-  console.error("Cambia il PIN predefinito prima di andare online: npm run seed -- --pin=XXXXXX");
+const problema = controlliAvvio({
+  produzione: PRODUZIONE, host: HOST, tunnel: process.env.TUNNEL === "1", baseUrl: BASE_URL,
+  pinPredefinito: verificaPin("246810", utente.hash, utente.sale)
+});
+if (problema) {
+  console.error(problema);
   process.exit(1);
 }
 
-const app = creaApp({ db, produzione: PRODUZIONE, cartellaFoto, baseUrl: (process.env.BASE_URL || "").replace(/[/]+$/, "") });
-app.listen(PORTA, () => {
+const app = creaApp({ db, produzione: PRODUZIONE, cartellaFoto, baseUrl: BASE_URL, trustProxy: process.env.TRUST_PROXY || "loopback" });
+app.listen(PORTA, HOST, () => {
   console.log(`Container Serraglio in ascolto su http://localhost:${PORTA}`);
   console.log(`Pannello di gestione: http://localhost:${PORTA}/admin`);
 });

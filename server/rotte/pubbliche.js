@@ -1,6 +1,9 @@
 import express from "express";
 import path from "node:path";
 import zlib from "node:zlib";
+import { promisify } from "node:util";
+
+const gzip = promisify(zlib.gzip);
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "../db.js";
 import { NOME_VALIDO, TIPI_MIME } from "../foto.js";
 import { oraRoma } from "../../public/lib/orari.js";
@@ -13,13 +16,16 @@ export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render, 
   /* La pagina si comprime qui (circa 60 KB → 12 KB): in produzione Caddy
      lascia stare ciò che è già compresso, e senza Caddy (tunnel, telefono)
      la pagina arriva comunque leggera. */
-  r.get("/", (req, res) => {
-    const html = render.pagina();
-    res.set({ "Cache-Control": "no-cache", Vary: "Accept-Encoding" }).type("html");
-    if (req.acceptsEncodings("gzip") === "gzip") {
-      return res.set("Content-Encoding", "gzip").send(zlib.gzipSync(html, { level: 6 }));
-    }
-    res.send(html);
+  // la pagina cambia al massimo una volta al minuto (il badge): si comprime solo allora
+  let compressa = { html: null, gz: null };
+  r.get("/", async (req, res, next) => {
+    try {
+      const html = render.pagina();
+      res.set({ "Cache-Control": "no-cache", Vary: "Accept-Encoding" }).type("html");
+      if (req.acceptsEncodings("gzip") !== "gzip") return res.send(html);
+      if (compressa.html !== html) compressa = { html, gz: await gzip(html, { level: 6 }) };
+      res.set("Content-Encoding", "gzip").send(compressa.gz);
+    } catch (err) { next(err); }
   });
 
   /* Pagine legali: composte a ogni richiesta dai dati del pannello (sono

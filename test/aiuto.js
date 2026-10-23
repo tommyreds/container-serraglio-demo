@@ -15,9 +15,9 @@ export function dbDiProva() {
   return db;
 }
 
-export async function avviaProva({ now = () => new Date(), db = dbDiProva(), produzione = false } = {}) {
+export async function avviaProva({ now = () => new Date(), db = dbDiProva(), produzione = false, trustProxy } = {}) {
   const cartellaFoto = fs.mkdtempSync(path.join(os.tmpdir(), "serraglio-foto-"));
-  const app = creaApp({ db, now, produzione, cartellaFoto });
+  const app = creaApp({ db, now, produzione, cartellaFoto, ...(trustProxy === undefined ? {} : { trustProxy }) });
   const server = await new Promise(ok => { const s = app.listen(0, "127.0.0.1", () => ok(s)); });
   server.unref();   // un test fallito prima di chiudi() non deve bloccare la suite
   const base = `http://127.0.0.1:${server.address().port}`;

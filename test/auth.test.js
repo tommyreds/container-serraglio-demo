@@ -134,3 +134,17 @@ test("blocco globale: le reti già usate dal titolare possono ancora entrare", (
   for (let i = 0; i < 5; i++) g.fallito("192.168.1.20");
   assert.equal(g.motivo("192.168.1.20"), "ip");
 });
+
+/* ---------- dalla revisione di sicurezza ---------- */
+
+test("troncaIp non esplode con indirizzi malformati", () => {
+  assert.doesNotThrow(() => troncaIp("1:2:3:4:5:6:7:8:9::1"));
+  assert.equal(troncaIp("non-un-ip"), "");
+});
+
+test("una sessione dura al massimo 90 giorni anche se usata ogni giorno", () => {
+  const db = dbDiProva();
+  const t = creaSessione(db, { utente: "banco", dispositivo: "x", now: ora("2026-01-01T00:00:00Z") });
+  for (let g = 1; g < 90; g += 20) assert.ok(leggiSessione(db, t, ora(new Date(Date.UTC(2026, 0, 1 + g)).toISOString())), `giorno ${g}`);
+  assert.equal(leggiSessione(db, t, ora("2026-04-02T00:00:00Z")), null);
+});

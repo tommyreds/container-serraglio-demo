@@ -86,3 +86,16 @@ test("reimpostaPin sostituisce il PIN e chiude tutte le sessioni", async () => {
   assert.equal(verificaPin("730194", u.hash, u.sale), true);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM sessioni").get().n, 0);
 });
+
+test("senza PIN indicato il seed ne sceglie uno casuale non banale", async () => {
+  const { semina } = await import("../server/seed.js");
+  const { pinBanale, verificaPin } = await import("../server/auth.js");
+  const { apriDb } = await import("../server/db.js");
+  const db = apriDb(":memory:");
+  const { pin } = semina(db, {});
+  assert.match(pin, /^\d{6}$/);
+  assert.equal(pinBanale(pin), false);
+  const u = db.prepare("SELECT hash, sale FROM utenti").get();
+  assert.ok(verificaPin(pin, u.hash, u.sale));
+  assert.throws(() => semina(apriDb(":memory:"), { pin: "123456" }), /PIN/);
+});

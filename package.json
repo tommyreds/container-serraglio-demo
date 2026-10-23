@@ -5,13 +5,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node server/server.js",
-    "seed": "node server/seed.js",
+    "start": "node --env-file-if-exists=.env server/server.js",
+    "seed": "node --env-file-if-exists=.env server/seed.js",
     "test": "node --test --test-timeout=20000 \"test/*.test.js\"",
     "test:e2e": "playwright test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.9"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",
