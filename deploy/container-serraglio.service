@@ -1,0 +1,29 @@
+[Unit]
+Description=Container Serraglio — sito e pannello
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=serraglio
+Group=serraglio
+WorkingDirectory=/srv/container-serraglio/app
+ExecStart=/usr/bin/node --env-file-if-exists=.env server/server.js
+Restart=on-failure
+RestartSec=3
+
+# il servizio può scrivere solo nella cartella dei dati
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=/srv/container-serraglio/dati
+
+[Install]
+WantedBy=multi-user.target

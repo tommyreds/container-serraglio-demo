@@ -1,0 +1,30 @@
+# Caddy davanti al sito: HTTPS automatico (Let's Encrypt), compressione,
+# HSTS e registro delle richieste con IP accorciato, tenuto 7 giorni.
+# {$DOMINIO} viene sostituito da setup.sh.
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:3000
+
+	log {
+		output file /var/log/caddy/serraglio.log {
+			roll_keep_for 168h
+		}
+		format filter {
+			request>remote_ip ip_mask 24 48
+			request>client_ip ip_mask 24 48
+			request>headers>Cookie delete
+			request>headers>X-Forwarded-For delete
+		}
+	}
+}
+
+www.{$DOMINIO} {
+	redir https://{$DOMINIO}{uri} permanent
+}

@@ -1,0 +1,13 @@
+[Unit]
+Description=Container Serraglio — copia di sicurezza giornaliera
+
+[Service]
+Type=oneshot
+User=serraglio
+Group=serraglio
+ExecStart=/bin/bash /srv/container-serraglio/app/deploy/backup.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/srv/container-serraglio/backup
