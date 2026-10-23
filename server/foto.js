@@ -30,6 +30,8 @@ export function dimensioniImmagine(buf, tipo) {
       let i = 2;
       while (i + 9 < buf.length) {
         if (buf[i] !== 0xff) return null;
+        // lo standard ammette byte 0xFF di riempimento prima del marcatore
+        while (buf[i + 1] === 0xff && i + 10 < buf.length) i++;
         const marcatore = buf[i + 1];
         const lungo = buf.readUInt16BE(i + 2);
         // SOF0..SOF15 tranne DHT (C4), JPG (C8) e DAC (CC)

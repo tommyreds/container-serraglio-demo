@@ -198,3 +198,26 @@ test("ogni rotta del pannello senza sessione: 401", async () => {
   }
   await p.chiudi();
 });
+
+/* ---------- dalla revisione della fase 1 ---------- */
+
+test("DELETE senza corpo, come lo manda il browser", async () => {
+  const p = await conAccesso();
+  const r = await p.richiesta("DELETE", "/api/admin/chiusure/2026-10-22", { cookie: p.cookie, senzaCorpo: true });
+  assert.equal(r.stato, 200);
+  const nuova = await p.chiama("POST", "/categorie", { nome: "Dolci", prezzo: "3" });
+  assert.equal((await p.richiesta("DELETE", `/api/admin/categorie/${nuova.json.id}`, { cookie: p.cookie, senzaCorpo: true })).stato, 200);
+  await p.chiudi();
+});
+
+test("interruttori accettano solo vero o falso", async () => {
+  const p = await conAccesso();
+  assert.equal((await p.chiama("PATCH", "/prodotti/sc1", { surgelati: "forse" })).stato, 400);
+  await p.chiama("PATCH", "/prodotti/sc1", { surgelati: true });
+  await p.chiama("PATCH", "/prodotti/sc1", { surgelati: "0" });
+  assert.equal(prodotto((await p.chiama("GET", "/menu")).json, "sc1").surgelati, false);
+  assert.equal((await p.chiama("PUT", "/prodotti/hb/finito", { finito: "false" })).stato, 200);
+  assert.equal(prodotto((await p.chiama("GET", "/menu")).json, "hb").finito, false);
+  assert.equal((await p.chiama("PATCH", "/prodotti/sc1", { disponibile: "boh" })).stato, 400);
+  await p.chiudi();
+});

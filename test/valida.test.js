@@ -65,3 +65,11 @@ test("validatori delle impostazioni", () => {
   assert.throws(() => V.pec("non-una-mail"));
   assert.equal(V.google_voto(""), "");
 });
+
+test("normalizzaWhatsapp aggiusta i numeri italiani e rifiuta quelli inutilizzabili", () => {
+  assert.equal(normalizzaWhatsapp("327 053 6624"), "393270536624");
+  assert.equal(normalizzaWhatsapp("0039 327 053 6624"), "393270536624");
+  assert.equal(normalizzaWhatsapp("+44 7700 900123"), "447700900123");
+  assert.throws(() => normalizzaWhatsapp("0574 123456"), /Numero WhatsApp non valido/);
+  assert.throws(() => normalizzaWhatsapp("39 12"), /Numero WhatsApp non valido/);
+});

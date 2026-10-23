@@ -75,3 +75,14 @@ test("impostazioni: lettura, scrittura e chiavi nuove", () => {
 
 test("utente del banco creato con il PIN di prova", () =>
   assert.ok(dbDiProva().prepare("SELECT 1 FROM utenti WHERE nome = 'banco'").get()));
+
+test("reimpostaPin sostituisce il PIN e chiude tutte le sessioni", async () => {
+  const { reimpostaPin } = await import("../server/seed.js");
+  const { verificaPin } = await import("../server/auth.js");
+  const db = dbDiProva();
+  db.prepare("INSERT INTO sessioni (token_hash, utente, creato_il, ultimo_uso, scade_il) VALUES ('x', 'banco', '', '', '2099-01-01')").run();
+  reimpostaPin(db, "730194");
+  const u = db.prepare("SELECT hash, sale FROM utenti WHERE nome = 'banco'").get();
+  assert.equal(verificaPin("730194", u.hash, u.sale), true);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM sessioni").get().n, 0);
+});

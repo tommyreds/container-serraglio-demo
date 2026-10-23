@@ -3,12 +3,12 @@ import crypto from "node:crypto";
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni, scriviImpostazione } from "../db.js";
 import { oraRoma } from "../../public/lib/orari.js";
 import { ALLERGENI, validaAllergeni } from "../../public/lib/allergeni.js";
-import { ErroreValidazione, leggiPrezzo, leggiTesto, leggiData, leggiOra, VALIDATORI_IMPOSTAZIONI } from "../valida.js";
+import { ErroreValidazione, leggiPrezzo, leggiTesto, leggiData, leggiOra, leggiSiNo, VALIDATORI_IMPOSTAZIONI } from "../valida.js";
 import { tipoImmagine, dimensioniImmagine, salvaFoto, eliminaFoto } from "../foto.js";
 import {
   creaLimitatore,
   verificaPin, creaHash, pinBanale, creaSessione, leggiSessione, chiudiSessione, chiudiAltreSessioni,
-  creaGuardiaLogin, descriviDispositivo, registraAccesso
+  creaGuardiaLogin, descriviDispositivo, registraAccesso, troncaIp
 } from "../auth.js";
 
 const DURATA_COOKIE_S = 30 * 24 * 3600;
@@ -24,7 +24,23 @@ function leggiCookie(req, nome) {
 export function rotteAdmin(contesto) {
   const { db, now, produzione } = contesto;
   const r = express.Router();
-  const guardia = creaGuardiaLogin();
+  /* Durante un blocco globale possono ancora entrare le reti da cui il
+     titolare ha già fatto accesso negli ultimi 30 giorni: chi attacca da
+     fuori non può chiudere fuori il locale. */
+  const guardia = creaGuardiaLogin({
+    fidato: ip => !!db.prepare("SELECT 1 FROM accessi WHERE esito = 'ok' AND ip_troncato = ?").get(troncaIp(ip))
+  });
+  const MESSAGGI_BLOCCO = {
+    ip: ["Troppi tentativi. Riprova fra un quarto d'ora.", 15 * 60],
+    globale: ["Troppi tentativi sbagliati da più dispositivi: l'accesso è sospeso per un'ora. Se sei del locale, riprova dal wifi del locale.", 60 * 60]
+  };
+  const respingiSeBloccato = (req, res) => {
+    const motivo = guardia.motivo(req.ip || "");
+    if (!motivo) return false;
+    const [errore, secondi] = MESSAGGI_BLOCCO[motivo];
+    res.set("Retry-After", String(secondi)).status(429).json({ errore });
+    return true;
+  };
   const NOME_COOKIE = produzione ? "__Host-sessione" : "sessione";
   const cookie = (valore, maxAge) =>
     `${NOME_COOKIE}=${valore}; HttpOnly;${produzione ? " Secure;" : ""} SameSite=Strict; Path=/; Max-Age=${maxAge}`;
@@ -32,7 +48,8 @@ export function rotteAdmin(contesto) {
   /* Le scritture accettano solo JSON (la foto ha la sua rotta, più avanti). */
   r.use((req, res, next) => {
     if (req.method === "GET" || req.method === "HEAD" || req.path.endsWith("/foto")) return next();
-    if (!req.is("application/json")) return res.status(415).json({ errore: "Formato non valido." });
+    // req.is() vale null se non c'è corpo (un DELETE del browser): va bene; false se il corpo non è JSON
+    if (req.is("application/json") === false) return res.status(415).json({ errore: "Formato non valido." });
     next();
   });
   r.use(express.json({ limit: "32kb" }));
@@ -51,7 +68,7 @@ export function rotteAdmin(contesto) {
 
   r.post("/login", (req, res) => {
     const ip = req.ip || "";
-    if (guardia.bloccato(ip)) return res.status(429).json({ errore: "Troppi tentativi. Riprova fra un quarto d'ora." });
+    if (respingiSeBloccato(req, res)) return;
 
     const pin = String(req.body?.pin ?? "").slice(0, 12);
     const utente = db.prepare("SELECT * FROM utenti WHERE nome = 'banco'").get();
@@ -84,8 +101,12 @@ export function rotteAdmin(contesto) {
   r.get("/stato", richiediAccesso, (req, res) => res.json({ utente: req.utente }));
 
   r.post("/pin", richiediAccesso, (req, res) => {
+    // stesso limite del login: altrimenti una sessione rubata proverebbe PIN all'infinito
+    if (respingiSeBloccato(req, res)) return;
     const utente = db.prepare("SELECT * FROM utenti WHERE nome = ?").get(req.utente);
-    if (!verificaPin(String(req.body?.attuale ?? ""), utente.hash, utente.sale)) {
+    if (!verificaPin(String(req.body?.attuale ?? "").slice(0, 12), utente.hash, utente.sale)) {
+      guardia.fallito(req.ip || "");
+      registraAccesso(db, { esito: "ko", dispositivo: descriviDispositivo(req.get("user-agent")), ip: req.ip, now: now() });
       return res.status(401).json({ errore: "Il PIN attuale non è giusto." });
     }
     const nuovo = String(req.body?.nuovo ?? "");
@@ -150,7 +171,7 @@ export function rotteAdmin(contesto) {
       `INSERT INTO prodotti (id, categoria_id, nome, descrizione, allergeni, surgelati, prezzo, disponibile, posizione)
        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`
     ).run(id, categoria.id, nome, leggiTesto(b.descrizione ?? "", { max: 200, campo: "Ingredienti" }),
-      leggiAllergeni(b.allergeni ?? []).join(","), b.surgelati ? 1 : 0,
+      leggiAllergeni(b.allergeni ?? []).join(","), leggiSiNo(b.surgelati ?? false),
       b.prezzo === undefined || b.prezzo === null || b.prezzo === "" ? null : leggiPrezzo(b.prezzo), posizione);
     return { stato: 201, corpo: { id } };
   }));
@@ -162,8 +183,8 @@ export function rotteAdmin(contesto) {
       nome: b.nome !== undefined ? leggiTesto(b.nome, { min: 2, max: 60, campo: "Nome" }) : p.nome,
       descrizione: b.descrizione !== undefined ? leggiTesto(b.descrizione, { max: 200, campo: "Ingredienti" }) : p.descrizione,
       allergeni: b.allergeni !== undefined ? leggiAllergeni(b.allergeni).join(",") : p.allergeni,
-      surgelati: b.surgelati !== undefined ? (b.surgelati ? 1 : 0) : p.surgelati,
-      disponibile: b.disponibile !== undefined ? (b.disponibile ? 1 : 0) : p.disponibile,
+      surgelati: b.surgelati !== undefined ? leggiSiNo(b.surgelati) : p.surgelati,
+      disponibile: b.disponibile !== undefined ? leggiSiNo(b.disponibile) : p.disponibile,
       prezzo: b.prezzo === undefined ? p.prezzo : (b.prezzo === null || b.prezzo === "" ? null : leggiPrezzo(b.prezzo))
     };
     db.prepare(
@@ -198,7 +219,7 @@ export function rotteAdmin(contesto) {
 
   r.put("/prodotti/:id/finito", ...scrive(req => {
     const p = trovaProdotto(req.params.id);
-    db.prepare("UPDATE prodotti SET finito_il = ? WHERE id = ?").run(req.body?.finito ? oggi() : null, p.id);
+    db.prepare("UPDATE prodotti SET finito_il = ? WHERE id = ?").run(leggiSiNo(req.body?.finito) ? oggi() : null, p.id);
   }));
 
   r.post("/categorie", ...scrive(req => {

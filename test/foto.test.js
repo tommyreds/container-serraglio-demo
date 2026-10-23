@@ -148,3 +148,26 @@ test("nomi foto non validi: 404", async () => {
   }
   await p.chiudi();
 });
+
+/* ---------- dalla revisione della fase 1 ---------- */
+
+test("JPEG con byte di riempimento prima del marcatore", () => {
+  const conRiempimento = Buffer.concat([JPEG.subarray(0, 20), Buffer.from([0xff, 0xff]), JPEG.subarray(20)]);
+  assert.deepEqual(dimensioniImmagine(conRiempimento, "jpeg"), { larghezza: 640, altezza: 480 });
+});
+
+test("foto servite anche da una cartella dentro una directory nascosta", async () => {
+  const nascosta = fs.mkdtempSync(path.join(os.tmpdir(), ".nascosta-"));
+  const { apriDb } = await import("../server/db.js");
+  const { semina } = await import("../server/seed.js");
+  const { creaApp } = await import("../server/app.js");
+  const db = apriDb(":memory:"); semina(db, { pin: "482915" });
+  const nome = salvaFoto(nascosta, PNG, "png");
+  const server = creaApp({ db, cartellaFoto: nascosta }).listen(0, "127.0.0.1");
+  await new Promise(ok => server.once("listening", ok));
+  server.unref();
+  const r = await fetch(`http://127.0.0.1:${server.address().port}/foto/${nome}`);
+  assert.equal(r.status, 200);
+  server.close();
+  fs.rmSync(nascosta, { recursive: true });
+});

@@ -37,10 +37,23 @@ export function leggiOra(v) {
   return s;
 }
 
+/* wa.me vuole il numero internazionale senza "+" né "00". Un cellulare
+   italiano scritto senza prefisso (10 cifre che iniziano per 3) riceve il 39;
+   un numero che inizia per 0 è un fisso o ha il prefisso sbagliato e verrebbe
+   aperto da WhatsApp come numero inesistente: meglio rifiutarlo subito. */
 export function normalizzaWhatsapp(v) {
-  const s = String(v ?? "").replace(/[\s+\-()]/g, "");
-  if (!/^\d{8,15}$/.test(s)) errore("Numero WhatsApp non valido: scrivilo con il prefisso, es. 39 327 053 6624.");
+  let s = String(v ?? "").replace(/[\s+\-().]/g, "");
+  if (s.startsWith("00")) s = s.slice(2);
+  if (/^3\d{9}$/.test(s)) s = `39${s}`;
+  if (!/^[1-9]\d{9,14}$/.test(s)) errore("Numero WhatsApp non valido: scrivilo con il prefisso, es. 39 327 053 6624.");
   return s;
+}
+
+/* Interruttori: solo valori inequivocabili, "forse" non diventa "sì". */
+export function leggiSiNo(v) {
+  if (v === true || v === 1 || v === "1" || v === "true") return 1;
+  if (v === false || v === 0 || v === "0" || v === "false") return 0;
+  errore("Valore non valido: usa sì o no.");
 }
 
 const DOMINI_PERMESSI = new Set(["instagram.com", "facebook.com", "google.com", "g.page", "maps.app.goo.gl"]);

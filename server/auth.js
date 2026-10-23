@@ -101,17 +101,23 @@ const MAX_IP = 5;
 const FINESTRA_TOTALE = 60 * 60_000;
 const MAX_TOTALE = 30;
 
-export function creaGuardiaLogin({ now = Date.now } = {}) {
+export function creaGuardiaLogin({ now = Date.now, fidato = () => false } = {}) {
   const perIp = new Map();
   let errori = [];
   let pausaFino = 0;
   const recenti = (lista, finestra) => lista.filter(t => now() - t < finestra);
 
+  /* null = può provare; "ip" = troppi errori da qui; "globale" = pausa per tutti
+     tranne le reti fidate (quelle da cui il titolare è già entrato). */
+  function motivo(ip) {
+    if (recenti(perIp.get(ip) || [], FINESTRA_IP).length >= MAX_IP) return "ip";
+    if (now() < pausaFino && !fidato(ip)) return "globale";
+    return null;
+  }
+
   return {
-    bloccato(ip) {
-      if (now() < pausaFino) return true;
-      return recenti(perIp.get(ip) || [], FINESTRA_IP).length >= MAX_IP;
-    },
+    motivo,
+    bloccato: ip => motivo(ip) !== null,
     fallito(ip) {
       const t = now();
       perIp.set(ip, [...recenti(perIp.get(ip) || [], FINESTRA_IP), t]);

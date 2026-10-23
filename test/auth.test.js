@@ -123,3 +123,14 @@ test("registraAccesso tronca l'IP e cancella i vecchi", () => {
   assert.equal(righe[0].ip_troncato, "203.0.113.0");
   assert.equal(righe[0].esito, "ok");
 });
+
+/* ---------- dalla revisione della fase 1 ---------- */
+
+test("blocco globale: le reti già usate dal titolare possono ancora entrare", () => {
+  const g = creaGuardiaLogin({ now: () => 0, fidato: ip => ip === "192.168.1.20" });
+  for (let i = 0; i < 30; i++) g.fallito(`10.0.${i}.1`);
+  assert.equal(g.motivo("192.168.1.20"), null);
+  assert.equal(g.motivo("8.8.8.8"), "globale");
+  for (let i = 0; i < 5; i++) g.fallito("192.168.1.20");
+  assert.equal(g.motivo("192.168.1.20"), "ip");
+});

@@ -30,7 +30,9 @@ export function rottePubbliche({ db, now, cartellaFoto }) {
   r.get("/foto/:nome", (req, res) => {
     const nome = req.params.nome;
     if (!NOME_VALIDO.test(nome)) return res.status(404).type("text/plain").send("Foto non trovata.");
-    res.sendFile(path.join(cartellaFoto, nome), {
+    // root assoluta: funziona anche con FOTO_DIR relativo o dentro cartelle che iniziano con "."
+    res.sendFile(nome, {
+      root: path.resolve(cartellaFoto),
       headers: {
         "Content-Type": TIPI_MIME[nome.split(".").pop()],
         "Cache-Control": "public, max-age=31536000, immutable"

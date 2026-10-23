@@ -160,3 +160,17 @@ test("API inesistente: 404 JSON", async () => {
   assert.equal(r.json.errore, "Risorsa non trovata.");
   await p.chiudi();
 });
+
+/* ---------- dalla revisione della fase 1 ---------- */
+
+test("cambio PIN: tentativi sul PIN attuale limitati e registrati", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  for (let i = 0; i < 5; i++) {
+    assert.equal((await p.richiesta("POST", "/api/admin/pin", { cookie: c, corpo: { attuale: "000000", nuovo: "730194" } })).stato, 401);
+  }
+  const r = await p.richiesta("POST", "/api/admin/pin", { cookie: c, corpo: { attuale: PIN_PROVA, nuovo: "730194" } });
+  assert.equal(r.stato, 429);
+  assert.equal(p.db.prepare("SELECT COUNT(*) n FROM accessi WHERE esito = 'ko'").get().n, 5);
+  await p.chiudi();
+});

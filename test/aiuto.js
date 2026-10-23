@@ -22,12 +22,14 @@ export async function avviaProva({ now = () => new Date(), db = dbDiProva(), pro
   server.unref();   // un test fallito prima di chiudi() non deve bloccare la suite
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  async function richiesta(metodo, percorso, { corpo, cookie, origine = base, tipo, grezzo } = {}) {
+  async function richiesta(metodo, percorso, { corpo, cookie, origine = base, tipo, grezzo, senzaCorpo } = {}) {
     const intestazioni = {};
     if (origine) intestazioni.Origin = origine;
     if (cookie) intestazioni.Cookie = cookie;
     let body;
-    if (grezzo !== undefined) { body = grezzo; intestazioni["Content-Type"] = tipo; }
+    // come fa il browser con fetch(url, {method: "DELETE"}): intestazione JSON ma nessun corpo
+    if (senzaCorpo) intestazioni["Content-Type"] = "application/json";
+    else if (grezzo !== undefined) { body = grezzo; intestazioni["Content-Type"] = tipo; }
     else if (metodo !== "GET") { body = JSON.stringify(corpo ?? {}); intestazioni["Content-Type"] = tipo ?? "application/json"; }
     const r = await fetch(base + percorso, { method: metodo, headers: intestazioni, body, redirect: "manual" });
     const testo = await r.text();

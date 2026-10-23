@@ -91,7 +91,19 @@ export function semina(db, { pin }) {
   })();
 }
 
-/* ---------- uso da riga di comando ---------- */
+/* PIN dimenticato o accesso bloccato: dal server si reimposta senza
+   toccare il menù, e tutti i dispositivi devono rientrare. */
+export function reimpostaPin(db, pin) {
+  const { hash, sale } = creaHash(pin);
+  db.transaction(() => {
+    db.prepare("UPDATE utenti SET hash = ?, sale = ? WHERE nome = 'banco'").run(hash, sale);
+    db.prepare("DELETE FROM sessioni").run();
+  })();
+}
+
+/* ---------- uso da riga di comando ----------
+   npm run seed -- --pin=NNNNNN                  popola il database
+   npm run seed -- --pin=NNNNNN --solo-pin       cambia solo il PIN */
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const qui = path.dirname(fileURLToPath(import.meta.url));
   const argomento = process.argv.find(a => a.startsWith("--pin="));
@@ -101,6 +113,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     process.exit(1);
   }
   const db = apriDb(process.env.DB_PATH || path.join(qui, "..", "dati", "container.db"));
+  if (process.argv.includes("--solo-pin")) {
+    if (!argomento) { console.error("Indica il nuovo PIN: --pin=NNNNNN"); process.exit(1); }
+    reimpostaPin(db, pin);
+    console.log("PIN cambiato. Tutti i dispositivi dovranno rifare l'accesso.");
+    process.exit(0);
+  }
   const nuovo = !db.prepare("SELECT 1 FROM utenti WHERE nome = 'banco'").get();
   semina(db, { pin });
   console.log(`Caricate ${CATEGORIE.length} categorie e ${PRODOTTI.length} prodotti.`);
