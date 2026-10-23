@@ -6,9 +6,9 @@
 <!--slot:head-meta-->
 <meta name="theme-color" content="#F4F1EA">
 <link rel="icon" href="{{asset:img/logo-blu.png}}">
-<link rel="preload" href="{{asset:fonts/bricolage-800.woff2}}" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="{{asset:fonts/dmsans-400.woff2}}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{{asset:img/p-hamburger.webp}}" as="image" fetchpriority="high">
+<link rel="preload" href="fonts/bricolage-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/dmsans-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{{asset:style.css}}">
 <!--slot:jsonld-->
 </head>
@@ -107,7 +107,8 @@
     <button type="button" class="chiudi" data-chiudi aria-label="Chiudi">×</button>
   </div>
   <div class="foglio-corpo">
-    <p class="avviso" id="avviso-vassoio" hidden></p>
+    <p class="avviso" id="avviso-vassoio" role="status" hidden></p>
+    <div class="solo-lettori" id="annunci-vassoio" aria-live="polite"></div>
     <ul class="righe" id="righe-vassoio"></ul>
     <div class="campo">
       <label for="nome-ritiro">Nome per il ritiro</label>
@@ -125,8 +126,8 @@
   </div>
   <div class="foglio-piede">
     <div class="totale-riga"><span>Totale</span><span id="totale-vassoio">0,00 €</span></div>
-    <a class="bottone bottone-giallo" id="invia-whatsapp" href="#" target="_blank" rel="noopener">Invia su WhatsApp</a>
-    <p class="motivo" id="motivo-blocco" hidden></p>
+    <a class="bottone bottone-giallo" id="invia-whatsapp" href="#" target="_blank" rel="noopener" aria-describedby="motivo-blocco">Invia su WhatsApp</a>
+    <p class="motivo" id="motivo-blocco" role="status" hidden></p>
     <div id="chiedi-svuota" hidden>
       <p class="nota-piccola">Messaggio pronto su WhatsApp — svuoto il vassoio?</p>
       <div class="chiedi">

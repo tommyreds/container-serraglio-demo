@@ -7,8 +7,9 @@
    ------------------------------------------------------------------ */
 
 import { statoApertura, orariRitiro, testoStato } from "./lib/orari.js";
-import { componiMessaggio, linkWhatsApp, euro } from "./lib/whatsapp.js";
+import { componiMessaggio, linkWhatsApp, euro, pulisci } from "./lib/whatsapp.js";
 import { escapeHtml as e } from "./lib/escape.js";
+import { etichetteAllergeni } from "./lib/allergeni.js";
 import "./movimento.js";
 
 const $ = (s, dentro = document) => dentro.querySelector(s);
@@ -62,7 +63,8 @@ const totale = () => righe().reduce((a, r) => a + r.quantita * r.prezzo_finale, 
 const contaPezzi = n => `${n} ${n === 1 ? "pezzo" : "pezzi"}`;
 
 function annuncia(testo) {
-  const zona = $("#annunci");
+  // con un foglio aperto il resto della pagina è inerte: si parla da dentro il foglio
+  const zona = foglio.open ? $("#annunci-vassoio") : $("#annunci");
   zona.textContent = "";
   requestAnimationFrame(() => { zona.textContent = testo; });
 }
@@ -90,6 +92,16 @@ function cambia(id, delta, da) {
 
 function aggiornaSchede() {
   for (const scheda of $$(".scheda")) {
+    // un prodotto tolto o finito dopo il caricamento della pagina non si può più aggiungere
+    const p = prodotti[scheda.dataset.id];
+    if ((!p || p.finito) && !scheda.classList.contains("finito")) {
+      scheda.classList.add("finito");
+      $(".piu", scheda).disabled = true;
+      const etichetta = document.createElement("span");
+      etichetta.className = "etichetta-finito";
+      etichetta.textContent = p ? "Finito per oggi" : "Non disponibile";
+      $(".scheda-media", scheda).after(etichetta);
+    }
     const q = vassoio[scheda.dataset.id] || 0;
     let segno = $(".quanti", scheda);
     if (q && !segno) {
@@ -115,6 +127,9 @@ function aggiornaBarra() {
 
 function disegnaRighe() {
   const lista = $("#righe-vassoio");
+  // ricostruire la lista distrugge il pulsante appena premuto: si ricorda e si rimette il focus
+  const attivo = document.activeElement?.closest?.("#righe-vassoio li[data-id] button");
+  const ricorda = attivo && { id: attivo.closest("li").dataset.id, piu: attivo.hasAttribute("data-piu") };
   lista.innerHTML = pezzi()
     ? righe().map(r => `<li data-id="${e(r.id)}">
       <span class="nome">${e(r.nome)}<small>${e(euro(r.prezzo_finale))} l'uno</small></span>
@@ -125,6 +140,11 @@ function disegnaRighe() {
       </span></li>`).join("")
     : '<li class="vuoto">Il vassoio è vuoto: aggiungi qualcosa dal menù.</li>';
   $("#totale-vassoio").textContent = euro(totale());
+  if (ricorda) {
+    const riga = $(`li[data-id="${CSS.escape(ricorda.id)}"]`, lista);
+    const bersaglio = riga ? $(ricorda.piu ? "[data-piu]" : "[data-meno]", riga) : ($("li[data-id] [data-meno]", lista) || campoNome);
+    (bersaglio?.disabled ? $("[data-meno]", riga) : bersaglio)?.focus();
+  }
 }
 
 function aggiornaTutto() {
@@ -142,18 +162,37 @@ function fasce() {
   });
 }
 
+/* L'elenco si ricostruisce solo quando cambia davvero (altrimenti il
+   selettore aperto sul telefono si chiuderebbe ogni minuto). Se l'orario
+   scelto non c'è più, non lo si sostituisce in silenzio: si avvisa e il
+   prossimo tocco su Invia si ferma finché lo studente non conferma. */
+const SCADUTA = "L'orario che avevi scelto è passato: controlla quello nuovo e tocca di nuovo Invia.";
+let sceltaScaduta = false;
+
 function popolaOrari() {
   const scelta = campoOra.value;
   const elenco = fasce();
-  campoOra.innerHTML = elenco.map(o => `<option value="${o}">${o}</option>`).join("");
-  if (elenco.includes(scelta)) campoOra.value = scelta;
+  const chiave = elenco.join(",");
+  if (campoOra.dataset.elenco !== chiave) {
+    campoOra.innerHTML = elenco.map(o => `<option value="${o}">${o}</option>`).join("");
+    campoOra.dataset.elenco = chiave;
+    if (elenco.includes(scelta)) campoOra.value = scelta;
+    else if (scelta && elenco.length) { sceltaScaduta = true; avvisa(SCADUTA); }
+  }
   campoOra.disabled = elenco.length === 0;
-  return { elenco, scaduta: !!scelta && !elenco.includes(scelta) };
+  return { elenco };
 }
+
+campoOra.addEventListener("change", () => {
+  sceltaScaduta = false;
+  if ($("#avviso-vassoio").textContent === SCADUTA) avvisa("");
+});
 
 /* Si può ordinare anche prima dell'apertura, per un orario di oggi.
    Non si può con ordini sospesi, nei giorni di chiusura o senza orari. */
+let verificando = false;
 function motivoBlocco(elenco) {
+  if (verificando) return "Controllo cosa è ancora disponibile…";
   if (imp.ordini_attivi !== "1") return "Ordini sospesi in questo momento.";
   if (elenco.length) return null;
   const stato = statoApertura({ orari, chiusure, now: adesso() });
@@ -175,8 +214,9 @@ function aggiornaInvio() {
   m.textContent = motivo || "";
   m.hidden = !motivo;
   if (motivo) {
+    // resta un link con href: raggiungibile da tastiera, e il tocco viene fermato dal gestore
     invia.setAttribute("aria-disabled", "true");
-    invia.removeAttribute("href");
+    invia.href = "#";
   } else {
     invia.removeAttribute("aria-disabled");
     invia.href = linkWhatsApp(imp.whatsapp, messaggio());
@@ -192,17 +232,17 @@ function erroreNome(testo) {
 
 invia.addEventListener("click", evento => {
   // ricontrollo al momento del tocco: il foglio può essere rimasto aperto a lungo
-  const { scaduta } = popolaOrari();
   aggiornaInvio();
   if (invia.getAttribute("aria-disabled") === "true") { evento.preventDefault(); return; }
-  if (scaduta) {
+  if (sceltaScaduta) {
     evento.preventDefault();
-    avvisa("L'orario che avevi scelto è passato: controlla quello nuovo e tocca di nuovo Invia.");
+    sceltaScaduta = false;   // il secondo tocco, dopo aver visto l'avviso, invia
     campoOra.focus();
     return;
   }
   const nome = campoNome.value.trim();
-  if ([...nome].length < 2) {
+  // conta il nome come arriverà nel messaggio, senza i simboli che WhatsApp toglie
+  if ([...pulisci(nome, 40)].length < 2) {
     evento.preventDefault();
     erroreNome("Scrivi il nome per il ritiro.");
     campoNome.focus();
@@ -230,30 +270,42 @@ $("#svuota-no").addEventListener("click", () => { $("#chiedi-svuota").hidden = t
 
 /* ---------- apertura del vassoio ---------- */
 
+/* Rilegge il menù prima di lasciar inviare: un prodotto può essere finito o
+   cambiato prezzo da quando la pagina è stata aperta. Massimo 4 secondi,
+   poi si va avanti con i dati della pagina. true se un prezzo è cambiato. */
 async function aggiornaDalServer() {
   try {
-    const r = await fetch("api/menu", { headers: { Accept: "application/json" }, cache: "no-store" });
-    if (!r.ok) return;
+    const segnale = AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined;
+    const r = await fetch("api/menu", { headers: { Accept: "application/json" }, cache: "no-store", signal: segnale });
+    if (!r.ok) return false;
     const m = await r.json();
     orari = m.orari;
     chiusure = m.chiusure.map(c => c.data);
     imp = m.impostazioni;
     const nuovi = {};
     for (const c of m.categorie) for (const p of c.prodotti) {
-      nuovi[p.id] = { ...prodotti[p.id], nome: p.nome, categoria: c.nome, prezzo_finale: p.prezzo_finale, finito: p.finito };
+      nuovi[p.id] = {
+        nome: p.nome, categoria: c.nome, descrizione: p.descrizione, prezzo_finale: p.prezzo_finale, finito: p.finito,
+        foto: p.foto, allergeni: etichetteAllergeni(p.allergeni.join(",")), surgelati: p.surgelati
+      };
     }
+    const prezzoCambiato = Object.keys(vassoio).some(id => nuovi[id] && prodotti[id] && nuovi[id].prezzo_finale !== prodotti[id].prezzo_finale);
     prodotti = nuovi;
-  } catch { /* offline: restano i dati della pagina */ }
+    return prezzoCambiato;
+  } catch { return false; /* offline o lento: restano i dati della pagina */ }
 }
 
 async function apriVassoio() {
   $("#chiedi-svuota").hidden = true;
   if (!campoNome.value) { try { campoNome.value = localStorage.getItem("cs-nome") || ""; } catch { /* niente */ } }
+  verificando = true;
   disegnaRighe();
   aggiornaInvio();
   if (!foglio.open) foglio.showModal();
-  await aggiornaDalServer();
+  const prezzoCambiato = await aggiornaDalServer();
+  verificando = false;
   if (ripulisci()) avvisa(TOLTI);
+  else if (prezzoCambiato) avvisa("Alcuni prezzi sono cambiati: il totale è già aggiornato.");
   aggiornaTutto();
 }
 

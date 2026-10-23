@@ -175,3 +175,14 @@ test("una modifica dal pannello si vede subito sulla pagina", async () => {
   assert.ok((await (await fetch(p.base + "/")).text()).includes("Appena cambiato"));
   await p.chiudi();
 });
+
+test("la pagina viaggia compressa se il browser lo accetta", async () => {
+  const p = await avviaProva({ now: GIOVEDI });
+  const { request } = await import("node:http");
+  const intestazioni = await new Promise((ok, ko) => {
+    request(p.base + "/", { headers: { "Accept-Encoding": "gzip" } }, r => { r.resume(); ok(r.headers); }).on("error", ko).end();
+  });
+  assert.equal(intestazioni["content-encoding"], "gzip");
+  assert.match(intestazioni.vary, /Accept-Encoding/);
+  await p.chiudi();
+});

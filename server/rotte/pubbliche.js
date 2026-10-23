@@ -1,5 +1,6 @@
 import express from "express";
 import path from "node:path";
+import zlib from "node:zlib";
 import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "../db.js";
 import { NOME_VALIDO, TIPI_MIME } from "../foto.js";
 import { oraRoma } from "../../public/lib/orari.js";
@@ -7,8 +8,16 @@ import { oraRoma } from "../../public/lib/orari.js";
 export function rottePubbliche({ db, now, cartellaFoto, render }) {
   const r = express.Router();
 
+  /* La pagina si comprime qui (circa 60 KB → 12 KB): in produzione Caddy
+     lascia stare ciò che è già compresso, e senza Caddy (tunnel, telefono)
+     la pagina arriva comunque leggera. */
   r.get("/", (req, res) => {
-    res.set("Cache-Control", "no-cache").type("html").send(render.pagina());
+    const html = render.pagina();
+    res.set({ "Cache-Control": "no-cache", Vary: "Accept-Encoding" }).type("html");
+    if (req.acceptsEncodings("gzip") === "gzip") {
+      return res.set("Content-Encoding", "gzip").send(zlib.gzipSync(html, { level: 6 }));
+    }
+    res.send(html);
   });
 
   r.get("/salute", (req, res) => {

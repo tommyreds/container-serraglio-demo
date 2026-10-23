@@ -121,3 +121,53 @@ test.describe("movimento ridotto", () => {
     await expect(page.locator(".pallino-volo")).toHaveCount(0);
   });
 });
+
+/* ---------- dalla revisione delle fasi 2-3 ---------- */
+
+test("l'orario scelto non cambia di nascosto: se passa, avviso e niente invio", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-10-23T13:00:00+02:00"));
+  await page.goto("/");
+  await scheda(page, "sc1").locator(".piu").click();
+  await page.locator("#barra-vassoio").click();
+  await page.fill("#nome-ritiro", "Marta");
+  await page.selectOption("#ora-ritiro", "13:30");
+  await page.clock.setFixedTime(new Date("2026-10-23T13:20:00+02:00"));
+  await page.fill("#note", "x");
+  let aperto = false;
+  page.on("popup", () => { aperto = true; });
+  await page.locator("#invia-whatsapp").click();
+  await expect(page.locator("#avviso-vassoio")).toHaveText(/L'orario che avevi scelto è passato/);
+  expect(aperto).toBe(false);
+});
+
+test("il + del vassoio da tastiera tiene il focus", async ({ page }) => {
+  await page.clock.setFixedTime(VENERDI_MEZZOGIORNO);
+  await page.goto("/");
+  await scheda(page, "sc1").locator(".piu").click();
+  await page.locator("#barra-vassoio").click();
+  const piu = page.locator('#righe-vassoio li[data-id="sc1"] [data-piu]');
+  await piu.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator('#righe-vassoio li[data-id="sc1"] output')).toHaveText("2");
+  await expect(page.locator('#righe-vassoio li[data-id="sc1"] [data-piu]')).toBeFocused();
+});
+
+test("un nome fatto solo di simboli non basta", async ({ page }) => {
+  await page.clock.setFixedTime(VENERDI_MEZZOGIORNO);
+  await page.goto("/");
+  await scheda(page, "sc1").locator(".piu").click();
+  await page.locator("#barra-vassoio").click();
+  await page.fill("#nome-ritiro", "**");
+  await page.locator("#invia-whatsapp").click();
+  await expect(page.locator("#errore-nome")).toHaveText("Scrivi il nome per il ritiro.");
+});
+
+test("Invia bloccato resta raggiungibile da tastiera e collegato al motivo", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-10-24T12:00:00+02:00"));
+  await page.goto("/");
+  await scheda(page, "sc1").locator(".piu").click();
+  await page.locator("#barra-vassoio").click();
+  const invia = page.locator("#invia-whatsapp");
+  await expect(invia).toHaveAttribute("href", "#");
+  await expect(invia).toHaveAttribute("aria-describedby", "motivo-blocco");
+});
