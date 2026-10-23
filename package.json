@@ -7,11 +7,17 @@
   "scripts": {
     "start": "node server/server.js",
     "seed": "node server/seed.js",
-    "demo": "node demo/server.mjs"
+    "test": "node --test \"test/*.test.js\"",
+    "test:e2e": "playwright test"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "better-sqlite3": "^11.5.0",
     "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }
