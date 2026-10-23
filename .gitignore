@@ -6,3 +6,5 @@ dati/
 .env
 .superpowers/
 .remember/
+test-results/
+playwright-report/
