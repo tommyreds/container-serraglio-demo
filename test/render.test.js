@@ -58,7 +58,7 @@ test("prezzo proprio diverso dalla categoria compare sulla scheda", () => {
 test("pagina completa: sezioni, categorie e pillole prezzo", () => {
   const html = pagina();
   for (const testo of ["01 · Come funziona", "02 · Il menù", "03 · Dove siamo", "Cosa mangi oggi?",
-    "Tre tocchi e passi a prenderlo", "Il pranzo <mark>a due passi</mark> dal PIN", "Vai al menù"]) {
+    "Tre tocchi e passi a prenderlo", "Vai al menù"]) {
     assert.ok(html.includes(testo), testo);
   }
   assert.ok(html.includes('id="cat-schiacciate"'));
@@ -189,4 +189,9 @@ test("la pagina viaggia compressa se il browser lo accetta", async () => {
   assert.equal(intestazioni["content-encoding"], "gzip");
   assert.match(intestazioni.vary, /Accept-Encoding/);
   await p.chiudi();
+});
+
+test("il titolo resta leggibile come frase intera", () => {
+  const h1 = pagina().match(/<h1 id="titolo-hero">(.*?)<\/h1>/s)[1].replace(/<[^>]+>/g, "");
+  assert.equal(h1, "Il pranzo a due passi dal PIN");
 });

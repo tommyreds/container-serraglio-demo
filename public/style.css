@@ -177,6 +177,16 @@ button { cursor: pointer; }
   font-weight: 700; font-size: .95rem; text-decoration: none; white-space: nowrap;
 }
 .chips a[aria-current="true"] { background: var(--inchiostro); color: #fff; box-shadow: none; }
+/* con il cursore che scivola, lo sfondo scuro lo disegna il cursore */
+.chips.con-cursore a { position: relative; z-index: 1; transition: color .25s; }
+.chips.con-cursore a[aria-current="true"] { background: transparent; }
+.chip-cursore {
+  position: absolute; z-index: 0; top: 12px; left: 0; height: 44px; width: 0; border-radius: 999px;
+  background: var(--inchiostro); opacity: 0; pointer-events: none;
+  transition: transform .38s var(--molla), width .38s var(--molla), opacity .2s;
+}
+.chip-cursore.visibile { opacity: 1; }
+.chip-cursore.senza-transizione { transition: none; }
 @media (min-width: 600px) { .chips { margin: 18px -24px 0; padding: 12px 24px; } }
 
 .categoria { padding-top: 26px; }
@@ -357,8 +367,9 @@ button { cursor: pointer; }
 .tabella-allergeni thead th:first-child { writing-mode: horizontal-tb; transform: none; }
 
 /* ---------- movimento ----------
-   Un solo momento all'apertura (l'hero) e risposte ai gesti. Niente che
-   parta scorrendo la pagina. */
+   Solo transform e opacity, brevi, una volta sola: entrata dell'hero, schede
+   che compaiono entrando nello schermo, risposte ai gesti. Nessun ciclo
+   infinito. Con "riduci movimento" non parte niente. */
 
 @media (prefers-reduced-motion: no-preference) {
   @keyframes sale { from { transform: translateY(18px); } to { transform: none; } }
@@ -368,11 +379,38 @@ button { cursor: pointer; }
   @keyframes foglio-su { from { transform: translateY(100%); } to { transform: none; } }
   @keyframes velo { from { opacity: 0; } to { opacity: 1; } }
 
-  .hero h1 { animation: sale .6s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes parola { from { opacity: 0; transform: translateY(.45em) rotate(2deg); } to { opacity: 1; transform: none; } }
+  @keyframes evidenzia { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+  @keyframes cade { 0% { opacity: 0; transform: translateY(-40px) rotate(-8deg) scale(.9); } 60% { opacity: 1; transform: translateY(6px) rotate(1deg); } 100% { transform: none; } }
+  @keyframes molla-su { 0% { transform: translateY(140%); } 70% { transform: translateY(-6%); } 100% { transform: none; } }
+  @keyframes passo-entra { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+  @keyframes numero { 0% { transform: scale(.4) rotate(-20deg); } 70% { transform: scale(1.15); } 100% { transform: none; } }
+
+  /* titolo: le parole salgono una dopo l'altra, poi l'evidenziatore si stende */
+  .hero h1 .parola { display: inline-block; animation: parola .5s cubic-bezier(.2, .8, .2, 1) both; }
+  .hero h1 .p2 { animation-delay: .06s; } .hero h1 .p3 { animation-delay: .12s; } .hero h1 .p4 { animation-delay: .18s; }
+  .hero h1 .p5 { animation-delay: .24s; } .hero h1 .p6 { animation-delay: .3s; } .hero h1 .p7 { animation-delay: .36s; }
+  .hero h1 mark { background-repeat: no-repeat; animation: evidenzia .5s cubic-bezier(.6, 0, .2, 1) .55s both; }
   .hero .badge-stato, .hero-sotto, .hero-azioni { animation: appare .5s ease-out both; }
   .hero-sotto { animation-delay: .12s; }
   .hero-azioni { animation-delay: .2s; }
-  .hero-foto img { animation: posa .7s var(--molla) .1s both; }
+  .hero-foto img { animation: cade .8s var(--molla) .2s both; }
+
+  /* schede e passi: compaiono una volta, entrando nello schermo (movimento.js) */
+  .anima-entrate .scheda { opacity: 0; transform: translateY(18px) scale(.98); transition: opacity .45s ease-out, transform .5s var(--molla); }
+  .anima-entrate .scheda.vista { opacity: 1; transform: none; }
+  .anima-entrate .passi .passo { opacity: 0; }
+  .anima-entrate .passi.vista .passo { animation: passo-entra .45s cubic-bezier(.2, .8, .2, 1) both; }
+  .anima-entrate .passi.vista .passo::before { animation: numero .5s var(--molla) both; }
+  .passi.vista .passo:nth-child(2), .passi.vista .passo:nth-child(2)::before { animation-delay: .14s; }
+  .passi.vista .passo:nth-child(3), .passi.vista .passo:nth-child(3)::before { animation-delay: .28s; }
+
+  /* il "+" confermato e la barra del vassoio che sale a molla */
+  .piu { transition: transform .15s, background-color .2s; }
+  .piu.fatto { background: var(--verde); }
+  .barra-vassoio:not([hidden]) { animation: molla-su .55s var(--molla) both; }
+  .marchio img { transition: transform .3s var(--molla); }
+  .testata.scorre .marchio img { transform: scale(.85); }
   .badge-stato.aperto .punto { animation: pulsa 2.4s ease-out 1s 3; }
 
   .scheda-media img, .scheda-ill svg { transition: transform .35s var(--molla); }
@@ -381,10 +419,23 @@ button { cursor: pointer; }
 
   .foglio[open] { animation: foglio-su .38s var(--molla); }
   .foglio[open]::backdrop { animation: velo .25s ease-out; }
-  .barra-vassoio:not([hidden]) { animation: appare .3s ease-out; }
+  .foglio.in-transizione[open] { animation: none; }
+
+  /* la foto passa dalla scheda al foglio (View Transitions); il resto sfuma in fretta */
+  ::view-transition-group(foto-prodotto) { animation-duration: .42s; animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; }
+}
+/* l'hamburger in apertura si allontana un po' mentre si scorre: lavoro del browser, niente JavaScript */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes allontana { to { transform: translateY(-36px) scale(.92) rotate(-4deg); opacity: .55; } }
+    .hero-foto { animation: allontana linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+  }
 }
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   .scheda:hover .scheda-media img, .scheda:hover .scheda-ill svg { transform: translateY(-5px) rotate(-4deg); }
+  .anima-entrate .scheda.vista { transition: opacity .45s ease-out, transform .35s var(--molla), box-shadow .3s; }
+  .scheda:hover { box-shadow: 0 12px 28px rgb(17 26 43 / .1); }
 }
 @media (prefers-reduced-motion: no-preference) and (min-width: 600px) {
   @keyframes foglio-centro { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }

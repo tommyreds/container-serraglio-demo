@@ -10,7 +10,7 @@ import { statoApertura, orariRitiro, testoStato } from "./lib/orari.js";
 import { componiMessaggio, linkWhatsApp, euro, pulisci } from "./lib/whatsapp.js";
 import { escapeHtml as e } from "./lib/escape.js";
 import { etichetteAllergeni } from "./lib/allergeni.js";
-import "./movimento.js";
+import { transizione } from "./movimento.js";
 
 const $ = (s, dentro = document) => dentro.querySelector(s);
 const $$ = (s, dentro = document) => [...dentro.querySelectorAll(s)];
@@ -344,14 +344,42 @@ function apriDettaglio(scheda) {
   const bottone = $("#aggiungi-dettaglio");
   bottone.disabled = p.finito;
   bottone.textContent = p.finito ? "Finito per oggi" : "Aggiungi al vassoio";
-  dettaglio.showModal();
+  // la foto della scheda "diventa" quella del foglio (dove il browser lo sa fare)
+  const daScheda = $(".scheda-media", scheda);
+  daScheda.style.viewTransitionName = "foto-prodotto";
+  dettaglio.classList.add("in-transizione");
+  transizione(() => {
+    daScheda.style.viewTransitionName = "";
+    dettaglio.showModal();
+    $(".dettaglio-media", dettaglio).style.viewTransitionName = "foto-prodotto";
+  }).then(() => {
+    dettaglio.classList.remove("in-transizione");
+    const m = $(".dettaglio-media", dettaglio);
+    if (m) m.style.viewTransitionName = "";
+  });
 }
+
+/* Chiusura con il percorso inverso: la foto torna dentro la sua scheda. */
+function chiudiDettaglio() {
+  if (!dettaglio.open) return Promise.resolve();
+  const scheda = inDettaglio && $(`.scheda[data-id="${CSS.escape(inDettaglio)}"]`);
+  const media = $(".dettaglio-media", dettaglio);
+  if (media) media.style.viewTransitionName = "foto-prodotto";
+  return transizione(() => {
+    if (media) media.style.viewTransitionName = "";
+    dettaglio.close();
+    if (scheda) $(".scheda-media", scheda).style.viewTransitionName = "foto-prodotto";
+  }).then(() => {
+    if (scheda) $(".scheda-media", scheda).style.viewTransitionName = "";
+  });
+}
+dettaglio.addEventListener("cancel", evento => { evento.preventDefault(); chiudiDettaglio(); });
 
 $("#aggiungi-dettaglio").addEventListener("click", () => {
   if (!inDettaglio) return;
-  const scheda = $(`.scheda[data-id="${CSS.escape(inDettaglio)}"]`);
-  dettaglio.close();
-  cambia(inDettaglio, 1, scheda && $(".piu", scheda));
+  const id = inDettaglio;
+  const scheda = $(`.scheda[data-id="${CSS.escape(id)}"]`);
+  chiudiDettaglio().then(() => cambia(id, 1, scheda && $(".piu", scheda)));
 });
 
 document.addEventListener("click", evento => {
@@ -365,7 +393,9 @@ document.addEventListener("click", evento => {
 
 for (const d of [foglio, dettaglio]) {
   d.addEventListener("click", evento => {
-    if (evento.target === d || evento.target.closest("[data-chiudi]")) d.close();
+    if (evento.target === d || evento.target.closest("[data-chiudi]")) {
+      if (d === dettaglio) chiudiDettaglio(); else d.close();
+    }
   });
 }
 
@@ -398,7 +428,13 @@ if ("IntersectionObserver" in window) {
   const sezioni = $$(".categoria");
   const segnaAttiva = () => {
     const attiva = sezioni.filter(s => s.getBoundingClientRect().top <= 180).at(-1);
-    for (const chip of chips) chip.setAttribute("aria-current", String(!!attiva && chip.getAttribute("href") === `#${attiva.id}`));
+    let scelta = null;
+    for (const chip of chips) {
+      const si = !!attiva && chip.getAttribute("href") === `#${attiva.id}`;
+      chip.setAttribute("aria-current", String(si));
+      if (si) scelta = chip;
+    }
+    document.dispatchEvent(new CustomEvent("chip:attiva", { detail: { chip: scelta } }));
   };
   const osservaCategorie = new IntersectionObserver(segnaAttiva, { rootMargin: "-170px 0px -40% 0px", threshold: [0, 1] });
   sezioni.forEach(s => osservaCategorie.observe(s));
