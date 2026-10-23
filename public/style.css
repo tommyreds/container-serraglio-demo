@@ -56,6 +56,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 3px solid var(--blu); outline-offset: 2px; border-radius: 6px; }
+/* titoli che ricevono il focus solo per essere annunciati: niente anello */
+[tabindex="-1"]:focus { outline: none; }
 .sezione-scura :focus-visible, .piede :focus-visible { outline-color: var(--giallo); }
 .solo-lettori { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .salta {
