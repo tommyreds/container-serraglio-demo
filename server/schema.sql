@@ -1,8 +1,8 @@
 -- Container Serraglio — struttura del database
--- I prezzi sono per categoria (il menù del locale funziona così).
--- Un prodotto può avere un prezzo proprio: se è NULL vale quello della categoria.
+-- Il sito non registra ordini: qui ci sono solo menù, orari, impostazioni
+-- e l'accesso al pannello. Nessun dato dei clienti.
+-- I prezzi sono per categoria; un prodotto con prezzo NULL usa quello della categoria.
 
-PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS categorie (
@@ -13,23 +13,34 @@ CREATE TABLE IF NOT EXISTS categorie (
   posizione INTEGER NOT NULL DEFAULT 0
 );
 
+-- allergeni: codici separati da virgola (vedi public/lib/allergeni.js)
+-- disponibile: 0 = nascosto dal menù senza cancellarlo
+-- finito_il: data (AAAA-MM-GG) in cui è finito; il giorno dopo torna da solo
 CREATE TABLE IF NOT EXISTS prodotti (
   id           TEXT PRIMARY KEY,
   categoria_id TEXT NOT NULL REFERENCES categorie(id) ON DELETE CASCADE,
   nome         TEXT NOT NULL,
   descrizione  TEXT NOT NULL DEFAULT '',
   allergeni    TEXT NOT NULL DEFAULT '',
+  surgelati    INTEGER NOT NULL DEFAULT 0,
   foto         TEXT,
   prezzo       REAL,
   disponibile  INTEGER NOT NULL DEFAULT 1,
+  finito_il    TEXT,
   posizione    INTEGER NOT NULL DEFAULT 0
 );
 
 -- giorno: 0 = lunedì ... 6 = domenica. apertura NULL = chiuso
 CREATE TABLE IF NOT EXISTS orari (
-  giorno   INTEGER PRIMARY KEY,
+  giorno   INTEGER PRIMARY KEY CHECK (giorno BETWEEN 0 AND 6),
   apertura TEXT,
   chiusura TEXT
+);
+
+-- chiusure straordinarie (feste, ferie, imprevisti)
+CREATE TABLE IF NOT EXISTS chiusure (
+  data   TEXT PRIMARY KEY,
+  motivo TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS impostazioni (
@@ -38,51 +49,27 @@ CREATE TABLE IF NOT EXISTS impostazioni (
   pubblica INTEGER NOT NULL DEFAULT 1
 );
 
-CREATE TABLE IF NOT EXISTS ordini (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  codice      TEXT NOT NULL UNIQUE,
-  nome        TEXT NOT NULL,
-  ritiro_data TEXT NOT NULL,
-  ritiro_ora  TEXT NOT NULL,
-  note        TEXT NOT NULL DEFAULT '',
-  totale      REAL NOT NULL,
-  stato       TEXT NOT NULL DEFAULT 'ricevuto',
-  creato_il   TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_ordini_fascia ON ordini(ritiro_data, ritiro_ora);
-
-CREATE TABLE IF NOT EXISTS righe_ordine (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  ordine_id   INTEGER NOT NULL REFERENCES ordini(id) ON DELETE CASCADE,
-  prodotto_id TEXT,
-  nome        TEXT NOT NULL,
-  prezzo      REAL NOT NULL,
-  quantita    INTEGER NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS utenti (
   nome TEXT PRIMARY KEY,
   hash TEXT NOT NULL,
   sale TEXT NOT NULL
 );
 
+-- il token non si salva: solo il suo SHA-256
 CREATE TABLE IF NOT EXISTS sessioni (
-  token     TEXT PRIMARY KEY,
-  utente    TEXT NOT NULL,
-  scade_il  TEXT NOT NULL
+  token_hash  TEXT PRIMARY KEY,
+  utente      TEXT NOT NULL,
+  creato_il   TEXT NOT NULL,
+  ultimo_uso  TEXT NOT NULL,
+  scade_il    TEXT NOT NULL,
+  dispositivo TEXT NOT NULL DEFAULT ''
 );
 
--- Scorte giornaliere.
--- ambito 'categoria' = pezzi di pane consegnati dal panificio per quel giorno,
--- condivisi fra tutte le varianti della categoria.
--- ambito 'prodotto'  = limite sul singolo prodotto (ingrediente contato).
--- Nessuna riga per un giorno = nessun limite per quel giorno.
--- Il venduto NON è una colonna: si ricava dagli ordini, così non può sfasarsi.
-CREATE TABLE IF NOT EXISTS scorte (
-  ambito      TEXT    NOT NULL CHECK (ambito IN ('categoria','prodotto')),
-  riferimento TEXT    NOT NULL,
-  data        TEXT    NOT NULL,
-  quantita    INTEGER NOT NULL CHECK (quantita >= 0),
-  PRIMARY KEY (ambito, riferimento, data)
+-- registro dei tentativi di accesso, tenuto 30 giorni, IP troncato
+CREATE TABLE IF NOT EXISTS accessi (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  quando      TEXT NOT NULL,
+  esito       TEXT NOT NULL CHECK (esito IN ('ok','ko')),
+  dispositivo TEXT NOT NULL DEFAULT '',
+  ip_troncato TEXT NOT NULL DEFAULT ''
 );
