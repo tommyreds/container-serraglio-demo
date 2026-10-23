@@ -50,9 +50,15 @@ test("con foto: img con dimensioni e caricamento pigro", () => {
   assert.match(html, /<img src="img\/p-hamburger\.webp" alt="" width="552" height="400" loading="lazy" decoding="async">/);
 });
 
-test("prezzo proprio diverso dalla categoria compare sulla scheda", () => {
-  assert.ok(!schedaHtml(base, categoria).includes("scheda-prezzo"));
-  assert.ok(schedaHtml({ ...base, prezzo: 6.5, prezzo_finale: 6.5 }, categoria).includes("6,50 €"));
+test("ogni scheda mostra il suo prezzo: quello della categoria o il suo, se diverso", () => {
+  assert.ok(schedaHtml(base, categoria).includes('<span class="scheda-prezzo">6 €</span>'));
+  assert.ok(schedaHtml({ ...base, prezzo: 6.5, prezzo_finale: 6.5 }, categoria).includes('<span class="scheda-prezzo">6,50 €</span>'));
+});
+
+test("contatore: il − parte nascosto e ha la sua etichetta, il + resta", () => {
+  const html = schedaHtml(base, categoria);
+  assert.match(html, /<div class="contatore"><button class="meno" type="button" aria-label="Togli un Prova" hidden>−<\/button><span class="numero" aria-hidden="true"><\/span><button class="piu" type="button" aria-label="Aggiungi Prova">\+<\/button><\/div>/);
+  assert.match(schedaHtml({ ...base, finito: true }, categoria), /<button class="piu"[^>]*disabled/);
 });
 
 test("pagina completa: sezioni, categorie e pillole prezzo", () => {

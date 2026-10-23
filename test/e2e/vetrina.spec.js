@@ -12,6 +12,24 @@ async function pannello(request) {
   });
 }
 
+test("contatore sulla scheda: + mostra − e il numero, − toglie e il focus torna al +", async ({ page }) => {
+  await page.goto("/");
+  const s = scheda(page, "sc1");
+  await expect(s.locator(".meno")).toBeHidden();
+  await s.locator(".piu").click();
+  await s.locator(".piu").click();
+  await expect(s.locator(".numero")).toHaveText("2");
+  await expect(page.locator("#barra-vassoio .conta")).toHaveText("2");
+  await s.locator(".meno").click();
+  await expect(s.locator(".numero")).toHaveText("1");
+  // l'ultimo − da tastiera: il − sparisce e il focus deve passare al + (Safari non dà il focus ai bottoni toccati)
+  await s.locator(".meno").focus();
+  await page.keyboard.press("Enter");
+  await expect(s.locator(".meno")).toBeHidden();
+  await expect(page.locator("#barra-vassoio")).toBeHidden();
+  await expect(s.locator(".piu")).toBeFocused();
+});
+
 test("aggiungi e invia: il link WhatsApp contiene il messaggio giusto", async ({ page }) => {
   await page.clock.setFixedTime(VENERDI_MEZZOGIORNO);
   await page.goto("/");

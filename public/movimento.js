@@ -60,7 +60,7 @@ export function animaAggiunta(da, verso) {
       { duration: 320, easing: "cubic-bezier(.2,.9,.3,1.4)" });
   };
   // la quantità sulla scheda fa un piccolo salto
-  da.closest(".scheda")?.querySelector(".quanti")?.animate(
+  da.closest(".scheda")?.querySelector(".numero")?.animate(
     [{ transform: "scale(.6)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }],
     { duration: 320, easing: "cubic-bezier(.2,.9,.3,1.4)" });
 }
@@ -90,9 +90,13 @@ if (attivo() && "IntersectionObserver" in window) {
   const osserva = new IntersectionObserver(voci => {
     // le schede che entrano insieme (una riga della griglia) escono una dopo l'altra
     voci.filter(v => v.isIntersecting).forEach((v, i) => {
-      v.target.style.transitionDelay = `${Math.min(i, 5) * 60}ms`;
+      const ritardo = `${Math.min(i, 5) * 60}ms`;
+      v.target.style.transitionDelay = ritardo;
+      v.target.style.setProperty("--ritardo", ritardo);   // la foto arriva dopo la sua scheda
       v.target.classList.add("vista");
       osserva.unobserve(v.target);
+      // finita l'entrata, il ritardo non deve frenare il passaggio del mouse
+      setTimeout(() => { v.target.style.transitionDelay = ""; }, 1000);
     });
   }, { rootMargin: "0px 0px -8% 0px", threshold: .12 });
   $$(".scheda, .passi").forEach(el => osserva.observe(el));

@@ -201,44 +201,70 @@ button { cursor: pointer; }
 }
 .cat-nota { margin-top: 8px; font-size: .9rem; color: var(--tenue); }
 
-.griglia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
-@media (min-width: 900px) { .griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+.griglia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin-top: 16px; }
+@media (min-width: 900px) { .griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 18px; } }
 @media (min-width: 1200px) { .griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
+/* La scheda si stacca dal fondo: un filo di bordo, un'ombra corta vicina e una
+   lunga morbida. Dentro, la foto sta su una "piastrella" calda tutta sua. */
 .scheda {
-  position: relative; display: flex; flex-direction: column; background: var(--carta);
-  border-radius: var(--r-m); padding: 8px 10px 10px; min-width: 0;
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--carta); border-radius: 22px; padding: 6px 6px 8px;
+  box-shadow: 0 0 0 1px rgb(17 26 43 / .05), 0 1px 2px rgb(17 26 43 / .06), 0 12px 26px -16px rgb(17 26 43 / .32);
 }
 .scheda-apri {
-  /* tutta la scheda apre il dettaglio; il "+" sta sopra e fa altro */
+  /* tutta la scheda apre il dettaglio; il contatore sta sopra e fa altro */
   position: absolute; inset: 0; z-index: 1; border: 0; background: none; border-radius: inherit; padding: 0;
 }
 .scheda-media {
-  position: relative; aspect-ratio: 5 / 4; display: grid; place-items: center; margin-bottom: 8px;
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; margin-bottom: 10px;
+  /* fondo freddo e chiarissimo (un velo del blu del marchio): pane e focaccia,
+     caldi e chiari, ci risaltano invece di confondersi come sul giallo */
+  border-radius: 17px; background: radial-gradient(120% 85% at 50% 100%, #DCE5F1 0%, #E9EFF7 50%, #F3F6FA 100%);
 }
-.scheda-media img { width: 100%; height: 100%; object-fit: contain; }
-.scheda-ill { width: 100%; height: 100%; border-radius: var(--r-s);
+/* ombra del cibo sulla piastrella */
+.scheda-media::after {
+  content: ""; position: absolute; left: 18%; right: 18%; bottom: 9%; height: 10%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(17 26 43 / .28), transparent);
+}
+.scheda-media img { position: relative; z-index: 1; width: 94%; height: 94%; object-fit: contain; }
+.scheda-ill { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: inherit;
   background: radial-gradient(circle at 50% 56%, var(--piatto) 0 44%, transparent 45%); }
+.scheda .scheda-ill { background: none; }
 .scheda-ill svg { width: 62%; height: 62%; margin: auto; position: relative; top: 19%; }
-.scheda-titolo { font: 800 1rem/1.15 var(--f-titolo); letter-spacing: -.01em; }
-.scheda-ingredienti { margin-top: 4px; font-size: .84rem; line-height: 1.38; color: var(--tenue); flex: 1; }
-.scheda-allergeni { margin-top: 6px; font-size: .74rem; line-height: 1.3; color: var(--tenue); }
-.scheda-piede { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
-.scheda-prezzo { font-weight: 700; font-size: .95rem; }
-.piu {
-  position: relative; z-index: 2; flex: none; width: 44px; height: 44px; border: 0; border-radius: 13px;
-  background: var(--blu); color: #fff; font-size: 1.6rem; line-height: 1; display: grid; place-items: center;
+.scheda-titolo, .scheda-ingredienti, .scheda-allergeni, .scheda-piede { padding: 0 6px; }
+.scheda-titolo { font: 800 1.08rem/1.12 var(--f-titolo); letter-spacing: -.02em; }
+.scheda-ingredienti {
+  margin-top: 5px; font-size: .84rem; line-height: 1.38; color: var(--tenue);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
-.piu:disabled { background: #C9CED6; color: #4A5262; cursor: not-allowed; }
-.quanti {
-  position: absolute; z-index: 2; top: 8px; right: 8px; min-width: 28px; height: 28px; padding: 0 8px;
-  border-radius: 999px; background: var(--giallo); color: var(--notte); font-weight: 700; font-size: .85rem;
-  display: grid; place-items: center;
+.scheda-allergeni { margin-top: 6px; font-size: .72rem; line-height: 1.3; color: var(--tenue); }
+.scheda-piede { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 10px; }
+.scheda-prezzo { font: 800 1.15rem/1 var(--f-titolo); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+/* Contatore: da solo è un "+" tondo; con il prodotto nel vassoio diventa una
+   pillola scura − n + (altezza fissa: cambia solo la larghezza, niente salti). */
+.contatore {
+  position: relative; z-index: 2; flex: none; display: flex; align-items: center; height: 46px; padding: 3px;
+  border-radius: 999px;
 }
+.piu, .meno {
+  flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; font-size: 1.45rem; font-weight: 700; line-height: 1;
+}
+.piu { background: var(--inchiostro); color: #fff; box-shadow: 0 6px 14px -6px rgb(17 26 43 / .55); }
+.piu:disabled { background: #C9CED6; color: #4A5262; cursor: not-allowed; box-shadow: none; }
+.numero { min-width: 20px; text-align: center; color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+.numero:empty { display: none; }
+.nel-vassoio .contatore { background: var(--inchiostro); box-shadow: 0 8px 18px -8px rgb(17 26 43 / .6); }
+.nel-vassoio .meno, .nel-vassoio .piu { width: 34px; height: 34px; font-size: 1.3rem; }
+.nel-vassoio .meno { background: transparent; color: #fff; }
+.nel-vassoio .piu { background: var(--giallo); color: var(--notte); box-shadow: none; }
+
 /* si attenua solo la foto: il testo deve restare leggibile */
 .finito .scheda-media { opacity: .4; }
 .etichetta-finito {
-  position: absolute; z-index: 2; top: 10px; left: 10px; background: var(--inchiostro); color: #fff;
+  position: absolute; z-index: 2; top: 14px; left: 14px; background: var(--inchiostro); color: #fff;
   font-size: .75rem; font-weight: 700; padding: 4px 9px; border-radius: 999px;
 }
 
@@ -397,8 +423,22 @@ button { cursor: pointer; }
   .hero-foto img { animation: cade .8s var(--molla) .2s both; }
 
   /* schede e passi: compaiono una volta, entrando nello schermo (movimento.js) */
-  .anima-entrate .scheda { opacity: 0; transform: translateY(18px) scale(.98); transition: opacity .45s ease-out, transform .5s var(--molla); }
+  .anima-entrate .scheda { opacity: 0; transform: translateY(22px) scale(.97); transition: opacity .45s ease-out, transform .55s var(--molla), box-shadow .3s; }
   .anima-entrate .scheda.vista { opacity: 1; transform: none; }
+  /* la foto arriva sulla sua piastrella poco dopo la scheda, con un mezzo giro;
+     "backwards": finita l'entrata, tocco e mouse la muovono di nuovo */
+  @keyframes foto-su { from { opacity: 0; transform: translateY(18px) rotate(-6deg) scale(.86); } to { opacity: 1; transform: none; } }
+  .anima-entrate .scheda.vista .scheda-media > img, .anima-entrate .scheda.vista .scheda-ill {
+    animation: foto-su .65s var(--molla) calc(var(--ritardo, 0s) + .12s) backwards;
+  }
+  /* il contatore si apre: − e numero spuntano dal "+" */
+  @keyframes spunta { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: none; } }
+  .nel-vassoio .meno, .nel-vassoio .numero { animation: spunta .3s var(--molla) both; }
+  .contatore { transition: background-color .25s, box-shadow .25s; }
+  .piu, .meno { transition: transform .15s, width .3s var(--molla), height .3s var(--molla), background-color .25s, color .25s; }
+  .meno:active { transform: scale(.88); }
+  /* premere la scheda (non il contatore) la fa affondare un poco */
+  .scheda:has(.scheda-apri:active) { transform: scale(.975); transition-duration: .12s; }
   .anima-entrate .passi .passo { opacity: 0; }
   .anima-entrate .passi.vista .passo { animation: passo-entra .45s cubic-bezier(.2, .8, .2, 1) both; }
   .anima-entrate .passi.vista .passo::before { animation: numero .5s var(--molla) both; }
@@ -406,15 +446,14 @@ button { cursor: pointer; }
   .passi.vista .passo:nth-child(3), .passi.vista .passo:nth-child(3)::before { animation-delay: .28s; }
 
   /* il "+" confermato e la barra del vassoio che sale a molla */
-  .piu { transition: transform .15s, background-color .2s; }
-  .piu.fatto { background: var(--verde); }
+  .piu.fatto { background: var(--verde); color: #fff; }
   .barra-vassoio:not([hidden]) { animation: molla-su .55s var(--molla) both; }
   .marchio img { transition: transform .3s var(--molla); }
   .testata.scorre .marchio img { transform: scale(.85); }
   .badge-stato.aperto .punto { animation: pulsa 2.4s ease-out 1s 3; }
 
   .scheda-media img, .scheda-ill svg { transition: transform .35s var(--molla); }
-  .scheda:active .scheda-media img, .scheda:active .scheda-ill svg { transform: scale(.97); }
+  .scheda:has(.scheda-apri:active) .scheda-media img { transform: scale(.95) rotate(-2deg); }
   .piu:active { transform: scale(.9); }
 
   .foglio[open] { animation: foglio-su .38s var(--molla); }
@@ -433,9 +472,12 @@ button { cursor: pointer; }
   }
 }
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
-  .scheda:hover .scheda-media img, .scheda:hover .scheda-ill svg { transform: translateY(-5px) rotate(-4deg); }
+  /* col mouse la scheda si solleva e il cibo esce un po' dalla sua piastrella */
+  .scheda:hover .scheda-media img, .scheda:hover .scheda-ill svg { transform: translateY(-10px) rotate(-4deg) scale(1.07); }
   .anima-entrate .scheda.vista { transition: opacity .45s ease-out, transform .35s var(--molla), box-shadow .3s; }
-  .scheda:hover { box-shadow: 0 12px 28px rgb(17 26 43 / .1); }
+  .scheda:hover { transform: translateY(-4px);
+    box-shadow: 0 0 0 1px rgb(17 26 43 / .05), 0 2px 4px rgb(17 26 43 / .06), 0 22px 40px -18px rgb(17 26 43 / .38); }
+  .piu:hover { transform: rotate(90deg); }
 }
 @media (prefers-reduced-motion: no-preference) and (min-width: 600px) {
   @keyframes foglio-centro { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }

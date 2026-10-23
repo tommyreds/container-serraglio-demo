@@ -104,16 +104,14 @@ function aggiornaSchede() {
       etichetta.textContent = p ? "Finito per oggi" : "Non disponibile";
       $(".scheda-media", scheda).after(etichetta);
     }
+    // nel vassoio il "+" si allarga in contatore − n +
     const q = vassoio[scheda.dataset.id] || 0;
-    let segno = $(".quanti", scheda);
-    if (q && !segno) {
-      segno = document.createElement("span");
-      segno.className = "quanti";
-      $(".scheda-media", scheda).append(segno);
-    }
-    if (segno) {
-      if (q) segno.textContent = `${q}×`; else segno.remove();
-    }
+    const meno = $(".meno", scheda);
+    scheda.classList.toggle("nel-vassoio", q > 0);
+    // il − sta per sparire: il focus passa al + invece di perdersi
+    if (!q && meno === document.activeElement) $(".piu", scheda).focus();
+    meno.hidden = !q;
+    $(".numero", scheda).textContent = q ? String(q) : "";
   }
 }
 
@@ -385,6 +383,8 @@ $("#aggiungi-dettaglio").addEventListener("click", () => {
 document.addEventListener("click", evento => {
   const piu = evento.target.closest(".scheda .piu");
   if (piu) { cambia(piu.closest(".scheda").dataset.id, 1, piu); return; }
+  const meno = evento.target.closest(".scheda .meno");
+  if (meno) { cambia(meno.closest(".scheda").dataset.id, -1, meno); return; }
   const apri = evento.target.closest(".scheda-apri");
   if (apri) apriDettaglio(apri.closest(".scheda"));
 });

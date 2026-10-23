@@ -80,14 +80,13 @@ export function schedaHtml(p, c, { caricamento = "lazy" } = {}) {
     allergeni.length ? `Allergeni: ${allergeni.join(", ")}` : "",
     p.surgelati ? "* contiene surgelati" : ""
   ].filter(Boolean).join(" · ");
-  const prezzoProprio = p.prezzo !== null && p.prezzo !== c.prezzo;
   return `<article class="scheda${p.finito ? " finito" : ""}" data-id="${e(p.id)}">
   <div class="scheda-media">${mediaHtml(p, c, caricamento)}</div>
   ${p.finito ? '<span class="etichetta-finito">Finito per oggi</span>' : ""}
   <h4 class="scheda-titolo">${e(p.nome)}</h4>
   ${p.descrizione ? `<p class="scheda-ingredienti">${e(p.descrizione)}</p>` : ""}
   ${righeAllergeni ? `<p class="scheda-allergeni">${e(righeAllergeni)}</p>` : ""}
-  <div class="scheda-piede">${prezzoProprio ? `<span class="scheda-prezzo">${e(prezzoBreve(p.prezzo_finale))}</span>` : "<span></span>"}<button class="piu" type="button" aria-label="Aggiungi ${e(p.nome)}"${p.finito ? " disabled" : ""}>+</button></div>
+  <div class="scheda-piede"><span class="scheda-prezzo">${e(prezzoBreve(p.prezzo_finale))}</span><div class="contatore"><button class="meno" type="button" aria-label="Togli un ${e(p.nome)}" hidden>−</button><span class="numero" aria-hidden="true"></span><button class="piu" type="button" aria-label="Aggiungi ${e(p.nome)}"${p.finito ? " disabled" : ""}>+</button></div></div>
   <button class="scheda-apri" type="button" aria-label="Dettagli di ${e(p.nome)}"></button>
 </article>`;
 }
