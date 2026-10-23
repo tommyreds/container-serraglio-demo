@@ -1,0 +1,15 @@
+{
+  "name": "Container Serraglio — pannello",
+  "short_name": "Serraglio",
+  "description": "Gestione del menù, degli orari e degli ordini dal sito",
+  "lang": "it",
+  "start_url": "/admin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1C2E",
+  "theme_color": "#0B1C2E",
+  "icons": [
+    { "src": "img/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "img/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

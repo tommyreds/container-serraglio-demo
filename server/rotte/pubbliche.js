@@ -5,7 +5,7 @@ import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "../db.j
 import { NOME_VALIDO, TIPI_MIME } from "../foto.js";
 import { oraRoma } from "../../public/lib/orari.js";
 
-export function rottePubbliche({ db, now, cartellaFoto, render }) {
+export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render }) {
   const r = express.Router();
 
   /* La pagina si comprime qui (circa 60 KB → 12 KB): in produzione Caddy
@@ -18,6 +18,11 @@ export function rottePubbliche({ db, now, cartellaFoto, render }) {
       return res.set("Content-Encoding", "gzip").send(zlib.gzipSync(html, { level: 6 }));
     }
     res.send(html);
+  });
+
+  // esplicita: public/admin/ è anche una cartella (i moduli del pannello)
+  r.get("/admin", (req, res) => {
+    res.set("Cache-Control", "no-cache").sendFile("admin.html", { root: path.resolve(cartellaPublic) });
   });
 
   r.get("/salute", (req, res) => {

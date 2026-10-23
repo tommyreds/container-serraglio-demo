@@ -174,3 +174,14 @@ test("cambio PIN: tentativi sul PIN attuale limitati e registrati", async () => 
   assert.equal(p.db.prepare("SELECT COUNT(*) n FROM accessi WHERE esito = 'ko'").get().n, 5);
   await p.chiudi();
 });
+
+test("il pannello si apre su /admin, non indicizzato", async () => {
+  const p = await avviaProva();
+  const r = await fetch(p.base + "/admin");
+  assert.equal(r.status, 200);
+  const html = await r.text();
+  assert.ok(html.includes('<meta name="robots" content="noindex, nofollow">'));
+  assert.ok(html.includes('rel="manifest"'));
+  assert.equal((await fetch(p.base + "/manifest.webmanifest")).status, 200);
+  await p.chiudi();
+});

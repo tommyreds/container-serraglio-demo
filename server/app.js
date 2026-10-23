@@ -55,6 +55,7 @@ export function creaApp({
   app.use("/api", (req, res) => res.status(404).json({ errore: "Risorsa non trovata." }));
   app.use(express.static(cartellaPublic, {
     index: false,
+    extensions: ["html"],   // /admin → admin.html
     setHeaders(res, _file) {
       res.setHeader("Cache-Control", res.req.query.v ? "public, max-age=31536000, immutable" : "no-cache");
     }
