@@ -40,7 +40,8 @@
 /* ---------- base ---------- */
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--testata) + 64px); }
+/* le barre fisse (testata + categorie sopra, vassoio sotto) non devono coprire ciò che ha il focus */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--testata) + 76px); scroll-padding-bottom: 96px; }
 body {
   margin: 0; background: var(--crema); color: var(--inchiostro);
   font: 400 1rem/1.55 var(--f-testo); -webkit-font-smoothing: antialiased;
@@ -222,7 +223,8 @@ button { cursor: pointer; }
   border-radius: 999px; background: var(--giallo); color: var(--notte); font-weight: 700; font-size: .85rem;
   display: grid; place-items: center;
 }
-.finito .scheda-media, .finito .scheda-titolo, .finito .scheda-ingredienti { opacity: .45; }
+/* si attenua solo la foto: il testo deve restare leggibile */
+.finito .scheda-media { opacity: .4; }
 .etichetta-finito {
   position: absolute; z-index: 2; top: 10px; left: 10px; background: var(--inchiostro); color: #fff;
   font-size: .75rem; font-weight: 700; padding: 4px 9px; border-radius: 999px;
@@ -286,6 +288,11 @@ button { cursor: pointer; }
 .foglio:not([open]) { display: none; }
 .foglio::backdrop { background: rgb(11 28 46 / .5); }
 @media (min-width: 600px) { .foglio { margin: auto; border-radius: var(--r-l); max-height: 86vh; } }
+/* schermo basso (telefono orizzontale, zoom forte): scorre tutto il foglio, non solo il centro */
+@media (max-height: 600px) {
+  .foglio { overflow-y: auto; }
+  .foglio-corpo { overflow: visible; }
+}
 .foglio-testa { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 18px 10px; }
 .foglio-testa h2 { font-size: 1.6rem; }
 .chiudi {
@@ -300,7 +307,7 @@ button { cursor: pointer; }
 .righe .nome small { display: block; font-weight: 400; color: var(--tenue); }
 .passo-q { display: flex; align-items: center; gap: 4px; background: var(--carta); border-radius: 999px; padding: 3px; }
 .passo-q button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--crema); font-size: 1.25rem; line-height: 1; }
-.passo-q output { min-width: 24px; text-align: center; font-weight: 700; }
+.passo-q .quantita { min-width: 24px; text-align: center; font-weight: 700; }
 
 .campo { margin-top: 16px; }
 .campo label { display: block; font-weight: 700; margin-bottom: 6px; }
@@ -315,6 +322,8 @@ button { cursor: pointer; }
 .totale-riga { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 1.15rem; margin-bottom: 12px; }
 .foglio-piede .bottone { width: 100%; min-height: 54px; font-size: 1.05rem; }
 .motivo { margin-top: 10px; font-size: .92rem; color: var(--tenue); text-align: center; }
+/* le regioni di stato restano nel documento anche vuote, così i lettori di schermo le annunciano */
+.avviso:empty, .motivo:empty { display: none; }
 .nota-piccola { margin-top: 10px; font-size: .82rem; color: var(--tenue); text-align: center; }
 .chiedi { display: flex; gap: 10px; margin-top: 10px; }
 .chiedi .bottone { flex: 1; }
@@ -361,7 +370,7 @@ button { cursor: pointer; }
   .hero-sotto { animation-delay: .12s; }
   .hero-azioni { animation-delay: .2s; }
   .hero-foto img { animation: posa .7s var(--molla) .1s both; }
-  .badge-stato.aperto .punto { animation: pulsa 2.4s ease-out 1s infinite; }
+  .badge-stato.aperto .punto { animation: pulsa 2.4s ease-out 1s 3; }
 
   .scheda-media img, .scheda-ill svg { transition: transform .35s var(--molla); }
   .scheda:active .scheda-media img, .scheda:active .scheda-ill svg { transform: scale(.97); }

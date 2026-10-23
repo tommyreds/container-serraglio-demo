@@ -71,8 +71,8 @@ function annuncia(testo) {
 
 function avvisa(testo) {
   const a = $("#avviso-vassoio");
-  a.textContent = testo;
-  a.hidden = !testo;
+  a.textContent = "";
+  if (testo) requestAnimationFrame(() => { a.textContent = testo; });
 }
 
 function cambia(id, delta, da) {
@@ -121,7 +121,7 @@ function aggiornaBarra() {
   barra.dataset.pezzi = String(n);
   $(".conta", barra).textContent = String(n);
   $(".totale", barra).textContent = euro(totale());
-  barra.setAttribute("aria-label", `Apri il vassoio: ${contaPezzi(n)}, ${euro(totale())}`);
+  barra.setAttribute("aria-label", `Ordina, vassoio: ${contaPezzi(n)}, ${euro(totale())}`);
   document.dispatchEvent(new CustomEvent("vassoio:totale", { detail: { el: $(".totale", barra), valore: totale() } }));
 }
 
@@ -135,7 +135,7 @@ function disegnaRighe() {
       <span class="nome">${e(r.nome)}<small>${e(euro(r.prezzo_finale))} l'uno</small></span>
       <span class="passo-q">
         <button type="button" data-meno aria-label="Togli un ${e(r.nome)}">−</button>
-        <output aria-label="Quantità">${r.quantita}</output>
+        <span class="quantita" aria-label="Quantità di ${e(r.nome)}: ${r.quantita}">${r.quantita}</span>
         <button type="button" data-piu aria-label="Aggiungi un ${e(r.nome)}"${r.quantita >= MAX_PEZZI ? " disabled" : ""}>+</button>
       </span></li>`).join("")
     : '<li class="vuoto">Il vassoio è vuoto: aggiungi qualcosa dal menù.</li>';
@@ -211,8 +211,7 @@ function aggiornaInvio() {
   const { elenco } = popolaOrari();
   const motivo = pezzi() ? motivoBlocco(elenco) : "Aggiungi almeno un prodotto.";
   const m = $("#motivo-blocco");
-  m.textContent = motivo || "";
-  m.hidden = !motivo;
+  if (m.textContent !== (motivo || "")) m.textContent = motivo || "";
   if (motivo) {
     // resta un link con href: raggiungibile da tastiera, e il tocco viene fermato dal gestore
     invia.setAttribute("aria-disabled", "true");
@@ -264,6 +263,7 @@ $("#svuota-si").addEventListener("click", () => {
   campoNote.value = "";
   foglio.close();
   aggiornaTutto();
+  $("#titolo-menu").focus();   // la barra del vassoio sparisce: il focus torna al menù
   annuncia("Vassoio svuotato.");
 });
 $("#svuota-no").addEventListener("click", () => { $("#chiedi-svuota").hidden = true; });

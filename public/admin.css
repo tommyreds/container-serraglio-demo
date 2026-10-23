@@ -54,6 +54,7 @@
   background: var(--verde); color: #fff; font-weight: 700; box-shadow: 0 10px 26px rgb(11 28 46 / .25);
 }
 .esito.errore { background: #A3261B; }
+.esito:empty, .accesso .errore:empty, .errore-editor:empty { display: none; }
 
 /* ---------- schermate ---------- */
 
@@ -87,7 +88,8 @@
 .interruttore { display: flex; align-items: center; gap: 14px; min-height: 56px; cursor: pointer; }
 .interruttore input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .leva {
-  flex: none; position: relative; width: 60px; height: 34px; border-radius: 999px; background: #C9CED6; transition: background-color .2s;
+  /* spento: grigio scuro (oltre 3:1 sul bianco), non un grigio chiaro che sparisce */
+  flex: none; position: relative; width: 60px; height: 34px; border-radius: 999px; background: #6B7587; transition: background-color .2s;
 }
 .leva::after {
   content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%;

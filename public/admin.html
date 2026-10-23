@@ -19,21 +19,19 @@
 <main class="accesso" id="accesso" hidden>
   <img src="img/logo-bianco.png" alt="" width="113" height="166">
   <h1>Pannello del locale</h1>
-  <label for="pin" class="guida">Scrivi il PIN di sei cifre</label>
+  <label for="pin" class="guida">Scrivi il PIN di sei cifre: all'ultima cifra si entra da soli</label>
   <input id="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
          autocomplete="current-password" aria-describedby="errore-accesso">
-  <p class="errore" id="errore-accesso" role="alert" hidden></p>
+  <p class="errore" id="errore-accesso" role="alert"></p>
   <button class="grosso" type="button" id="entra">Entra</button>
 </main>
 
 <!-- ============ lavoro ============ -->
 <div id="lavoro" hidden>
   <header class="barra-alta">
-    <h1 id="titolo-schermata">Oggi</h1>
+    <h1 id="titolo-schermata" tabindex="-1">Oggi</h1>
     <a class="link-sito" href="./" target="_blank" rel="noopener">Vedi il sito</a>
   </header>
-
-  <p class="esito" id="esito" role="status" aria-live="polite" hidden></p>
 
   <main class="schermata" id="schermata-oggi" aria-labelledby="titolo-schermata"></main>
   <main class="schermata" id="schermata-menu" aria-labelledby="titolo-schermata" hidden></main>
@@ -74,6 +72,10 @@
     </div>
   </div>
 </dialog>
+
+<!-- fuori da #lavoro: resta annunciabile anche all'uscita, quando #lavoro si nasconde -->
+<p class="esito" id="esito" role="status" aria-live="polite"></p>
+<p class="esito errore" id="esito-errore" role="alert"></p>
 
 <script type="module" src="admin.js"></script>
 </body>

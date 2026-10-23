@@ -29,17 +29,16 @@ async function entra() {
   const errore = $("#errore-accesso");
   if (!/^\d{6}$/.test(pin)) {
     errore.textContent = "Il PIN è di sei cifre.";
-    errore.hidden = false;
     return;
   }
   $("#entra").disabled = true;
   try {
     await api("POST", "/login", { pin });
-    errore.hidden = true;
+    errore.textContent = "";
     await avvia();
+    $("#titolo-schermata").focus();
   } catch (err) {
     errore.textContent = err.message;
-    errore.hidden = false;
     $("#pin").value = "";
     $("#pin").focus();
   } finally {
@@ -79,6 +78,7 @@ for (const b of $$(".barra-nav button")) {
     stato.schermata = b.dataset.schermata;
     disegna();
     window.scrollTo(0, 0);
+    $("#titolo-schermata").focus();   // si annuncia la nuova schermata
   });
 }
 
@@ -92,7 +92,7 @@ function disegnaOggi(el) {
   const primo = categorie.find(c => c.id === "primi")?.prodotti[0];
 
   el.innerHTML = `
-    ${imp.allergeni_verificati !== "1" ? `<p class="banner">Gli allergeni del menù sono dati di esempio. Verificali con la cucina, poi spunta «Allergeni verificati» in <button type="button" class="link" data-vai="info">Info</button>.</p>` : ""}
+    ${imp.allergeni_verificati !== "1" ? `<p class="banner">Gli allergeni del menù sono dati di esempio. Verificali con la cucina, poi spunta «Allergeni verificati» in <button type="button" class="link" data-vai="info">Apri Info</button>.</p>` : ""}
 
     <section class="blocco blocco-ordini${attivi ? "" : " in-pausa"}" aria-labelledby="t-ordini">
       <h2 id="t-ordini">Ordini dal sito</h2>
@@ -127,6 +127,7 @@ function disegnaOggi(el) {
   $("[data-vai]", el)?.addEventListener("click", ev => {
     stato.schermata = ev.target.dataset.vai;
     disegna();
+    $("#titolo-schermata").focus();
   });
 
   $("#ordini-attivi", el).addEventListener("change", async ev => {

@@ -148,7 +148,7 @@ test("il + del vassoio da tastiera tiene il focus", async ({ page }) => {
   const piu = page.locator('#righe-vassoio li[data-id="sc1"] [data-piu]');
   await piu.focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator('#righe-vassoio li[data-id="sc1"] output')).toHaveText("2");
+  await expect(page.locator('#righe-vassoio li[data-id="sc1"] .quantita')).toHaveText("2");
   await expect(page.locator('#righe-vassoio li[data-id="sc1"] [data-piu]')).toBeFocused();
 });
 
@@ -170,4 +170,15 @@ test("Invia bloccato resta raggiungibile da tastiera e collegato al motivo", asy
   const invia = page.locator("#invia-whatsapp");
   await expect(invia).toHaveAttribute("href", "#");
   await expect(invia).toHaveAttribute("aria-describedby", "motivo-blocco");
+});
+
+test("svuotato il vassoio, il focus torna al menù", async ({ page }) => {
+  await page.clock.setFixedTime(VENERDI_MEZZOGIORNO);
+  await page.goto("/");
+  await scheda(page, "sc1").locator(".piu").click();
+  await page.locator("#barra-vassoio").click();
+  await page.fill("#nome-ritiro", "Ada");
+  await page.evaluate(() => { document.getElementById("chiedi-svuota").hidden = false; });
+  await page.locator("#svuota-si").click();
+  await expect(page.locator("#titolo-menu")).toBeFocused();
 });

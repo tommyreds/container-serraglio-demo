@@ -9,25 +9,25 @@ export const $$ = (s, dentro = document) => [...dentro.querySelectorAll(s)];
 const ora = () => new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 
 /* Ogni salvataggio dice "Salvato · 10:14": senza, chi usa il pannello
-   ripete l'operazione per sicurezza. Gli errori restano finché non si
-   tocca di nuovo qualcosa. */
-let timer;
-export function mostraEsito(testo = "Salvato") {
-  const el = $("#esito");
-  el.textContent = `${testo} · ${ora()}`;
-  el.classList.remove("errore");
-  el.hidden = false;
-  clearTimeout(timer);
-  timer = setTimeout(() => { el.hidden = true; }, 4000);
+   ripete l'operazione per sicurezza. Gli errori usano role="alert".
+   Le regioni restano sempre nel documento (vuote = invisibili): il testo si
+   scrive al fotogramma dopo, così i lettori di schermo lo annunciano anche
+   quando è uguale al precedente. */
+const timer = {};
+function scrivi(id, testo, durata) {
+  const el = $(`#${id}`);
+  clearTimeout(timer[id]);
+  el.textContent = "";
+  requestAnimationFrame(() => { el.textContent = testo; });
+  timer[id] = setTimeout(() => { el.textContent = ""; }, durata);
 }
-
+export function mostraEsito(testo = "Salvato") {
+  $("#esito-errore").textContent = "";
+  scrivi("esito", `${testo} · ${ora()}`, 4000);
+}
 export function mostraErrore(testo) {
-  const el = $("#esito");
-  el.textContent = testo;
-  el.classList.add("errore");
-  el.hidden = false;
-  clearTimeout(timer);
-  timer = setTimeout(() => { el.hidden = true; }, 9000);
+  $("#esito").textContent = "";
+  scrivi("esito-errore", testo, 12000);
 }
 
 /* Esegue un salvataggio e mostra l'esito; restituisce true se è andato. */
@@ -61,9 +61,9 @@ export function conferma(testo, { si = "Sì", no = "Annulla" } = {}) {
    con la tastiera e i lettori di schermo senza codice in più. */
 export function interruttore({ id, etichetta, acceso, aiuto = "" }) {
   return `<label class="interruttore" for="${e(id)}">
-    <input type="checkbox" role="switch" id="${e(id)}"${acceso ? " checked" : ""}>
+    <input type="checkbox" role="switch" id="${e(id)}"${acceso ? " checked" : ""}${aiuto ? ` aria-describedby="${e(id)}-aiuto"` : ""}>
     <span class="leva" aria-hidden="true"></span>
-    <span class="testo">${e(etichetta)}${aiuto ? `<small>${e(aiuto)}</small>` : ""}</span>
+    <span class="testo"><span id="${e(id)}-nome">${e(etichetta)}</span>${aiuto ? `<small id="${e(id)}-aiuto">${e(aiuto)}</small>` : ""}</span>
   </label>`;
 }
 

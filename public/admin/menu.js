@@ -4,7 +4,7 @@
    sempre conferma con il nome di quello che sparisce. */
 
 import { api } from "./api.js";
-import { $, $$, e, salva, mostraEsito, conferma, campo, interruttore, euroBreve } from "./ui.js";
+import { $, $$, e, salva, mostraEsito, mostraErrore, conferma, campo, interruttore, euroBreve } from "./ui.js";
 import { preparaFoto } from "./foto.js";
 import { etichetteAllergeni } from "../lib/allergeni.js";
 
@@ -52,10 +52,20 @@ export function disegnaMenu(el, dati, ricarica) {
       const direzione = b.dataset.su ? "su" : "giu";
       if (await salva(() => api("POST", `/prodotti/${encodeURIComponent(sposta)}/sposta`, { direzione }), "Ordine salvato")) {
         await ricarica();
-        $(`[data-${direzione}="${CSS.escape(sposta)}"]`)?.focus();
+        // in cima "su" diventa disabilitato: il focus passa all'altra freccia
+        const altra = direzione === "su" ? "giu" : "su";
+        const qui = $(`[data-${direzione}="${CSS.escape(sposta)}"]`);
+        (qui && !qui.disabled ? qui : $(`[data-${altra}="${CSS.escape(sposta)}"]`))?.focus();
       }
     }
   };
+}
+
+/* Dopo un salvataggio la schermata si ridisegna: il focus torna sulla riga
+   appena toccata invece di perdersi in cima alla pagina. */
+async function ricaricaEFocus(ricarica, selettore) {
+  await ricarica();
+  ($(selettore) || $("#titolo-schermata"))?.focus();
 }
 
 /* ---------- editor ---------- */
@@ -65,8 +75,8 @@ const modulo = () => $("#modulo-editor");
 
 function erroreEditor(testo) {
   const p = $("#errore-editor");
-  p.textContent = testo;
-  p.hidden = !testo;
+  p.textContent = "";
+  if (testo) requestAnimationFrame(() => { p.textContent = testo; });
 }
 
 function anteprima(p, c, valori) {
@@ -97,12 +107,12 @@ function apriProdotto(p, c, dati, ricarica) {
   f.innerHTML = `
     ${nuovo ? "" : `<div class="anteprima" id="anteprima" aria-hidden="true"></div>
     <div class="foto-azioni">
-      <label class="carica-foto"><span class="grosso secondario" id="etichetta-foto" aria-hidden="true"></span>
-        <input type="file" id="file-foto" accept="image/*" capture="environment" aria-label="Scatta o scegli una foto"></label>
+      <label class="carica-foto"><span class="grosso secondario" id="etichetta-foto"></span>
+        <input type="file" id="file-foto" accept="image/*" capture="environment"></label>
       <button type="button" class="grosso secondario" id="togli-foto" hidden>Rimuovi la foto</button>
       <p class="aiuto" id="stato-foto" role="status"></p>
     </div>`}
-    ${campo({ id: "nome", etichetta: "Nome", valore: p?.nome || "", attributi: 'maxlength="60" required' })}
+    ${campo({ id: "nome", etichetta: "Nome (obbligatorio)", valore: p?.nome || "", attributi: 'maxlength="60" required aria-required="true"' })}
     ${campo({ id: "descrizione", etichetta: "Ingredienti", valore: p?.descrizione || "", tipo: "textarea", attributi: 'maxlength="200"',
       aiuto: "Separati da virgole, come sul cartellone." })}
     ${campo({ id: "prezzo", etichetta: "Prezzo (facoltativo)", valore: p?.prezzo === null || p?.prezzo === undefined ? "" : String(p.prezzo).replace(".", ","),
@@ -117,7 +127,7 @@ function apriProdotto(p, c, dati, ricarica) {
     <label class="spunta"><input type="checkbox" name="surgelati"${p?.surgelati ? " checked" : ""}> Contiene ingredienti surgelati</label>
     ${interruttore({ id: "mostra-prodotto", etichetta: "Mostra nel menù", acceso: p ? p.disponibile : true,
       aiuto: "Spento: il prodotto resta qui ma non compare sul sito." })}
-    <p class="errore-editor" id="errore-editor" role="alert" hidden></p>
+    <p class="errore-editor" id="errore-editor" role="alert"></p>
     <div class="azioni-editor">
       <button type="submit" class="grosso">${nuovo ? "Aggiungi al menù" : "Salva"}</button>
       ${nuovo ? "" : '<button type="button" class="grosso pericolo" id="elimina-prodotto">Elimina il prodotto</button>'}
@@ -138,18 +148,20 @@ function apriProdotto(p, c, dati, ricarica) {
     erroreEditor("");
     const v = leggiModulo(f);
     try {
-      if (nuovo) await api("POST", "/prodotti", { ...v, categoria_id: c.id });
-      else await api("PATCH", `/prodotti/${encodeURIComponent(p.id)}`, v);
+      const r = nuovo ? await api("POST", "/prodotti", { ...v, categoria_id: c.id })
+        : await api("PATCH", `/prodotti/${encodeURIComponent(p.id)}`, v);
       editor().close();
       mostraEsito(nuovo ? "Prodotto aggiunto" : "Salvato");
-      await ricarica();
-    } catch (err) { erroreEditor(err.message); }
+      await ricaricaEFocus(ricarica, `[data-prodotto="${CSS.escape(nuovo ? r.id : p.id)}"]`);
+    } catch (err) { if (editor().open) erroreEditor(err.message); else mostraErrore(err.message); }
   };
 
   $("#elimina-prodotto", f)?.addEventListener("click", async () => {
     editor().close();
     if (!(await conferma(`Eliminare ${p.nome}? Non si può annullare.`, { si: "Elimina" }))) { editor().showModal(); return; }
-    if (await salva(() => api("DELETE", `/prodotti/${encodeURIComponent(p.id)}`), `${p.nome} eliminato`)) await ricarica();
+    if (await salva(() => api("DELETE", `/prodotti/${encodeURIComponent(p.id)}`), `${p.nome} eliminato`)) {
+      await ricaricaEFocus(ricarica, `[data-nuovo="${CSS.escape(c.id)}"]`);
+    }
   });
 
   $("#file-foto", f)?.addEventListener("change", async ev => {
@@ -200,7 +212,7 @@ function apriCategoria(c, ricarica) {
       attributi: 'inputmode="decimal" placeholder="Es. 6 o 6,50"' })}
     ${campo({ id: "nota", etichetta: "Nota sotto il titolo (facoltativa)", valore: c?.nota || "", attributi: 'maxlength="200"',
       aiuto: "Es. «Bevuta e caffè compresi»." })}
-    <p class="errore-editor" id="errore-editor" role="alert" hidden></p>
+    <p class="errore-editor" id="errore-editor" role="alert"></p>
     <div class="azioni-editor">
       <button type="submit" class="grosso">${nuova ? "Aggiungi la categoria" : "Salva"}</button>
       ${nuova ? "" : '<button type="button" class="grosso pericolo" id="elimina-categoria">Elimina la categoria</button>'}
@@ -211,17 +223,18 @@ function apriCategoria(c, ricarica) {
     erroreEditor("");
     const v = { nome: f.nome.value, prezzo: f.prezzo.value, nota: f.nota.value };
     try {
-      if (nuova) await api("POST", "/categorie", v);
-      else await api("PATCH", `/categorie/${encodeURIComponent(c.id)}`, v);
+      const r = nuova ? await api("POST", "/categorie", v) : await api("PATCH", `/categorie/${encodeURIComponent(c.id)}`, v);
       editor().close();
       mostraEsito(nuova ? "Categoria aggiunta" : "Salvato");
-      await ricarica();
-    } catch (err) { erroreEditor(err.message); }
+      await ricaricaEFocus(ricarica, `[data-categoria="${CSS.escape(nuova ? r.id : c.id)}"]`);
+    } catch (err) { if (editor().open) erroreEditor(err.message); else mostraErrore(err.message); }
   };
   $("#elimina-categoria", f)?.addEventListener("click", async () => {
     editor().close();
     if (!(await conferma(`Eliminare la categoria ${c.nome}?`, { si: "Elimina" }))) { editor().showModal(); return; }
-    if (await salva(() => api("DELETE", `/categorie/${encodeURIComponent(c.id)}`), "Categoria eliminata")) await ricarica();
+    if (await salva(() => api("DELETE", `/categorie/${encodeURIComponent(c.id)}`), "Categoria eliminata")) {
+      await ricaricaEFocus(ricarica, "#nuova-categoria");
+    }
   });
   editor().showModal();
   $("#nome", f).focus();

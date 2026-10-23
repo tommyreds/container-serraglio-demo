@@ -33,7 +33,7 @@ export function disegnaInfo(el, dati, ricarica, esci) {
       <h2 id="t-orari">Orari della settimana</h2>
       <form id="modulo-orari" novalidate>
         ${dati.orari.map(o => `<div class="riga-orario">
-          ${interruttore({ id: `aperto-${o.giorno}`, etichetta: GIORNI[o.giorno], acceso: !!o.apertura, aiuto: o.apertura ? "" : "Chiuso" })}
+          ${interruttore({ id: `aperto-${o.giorno}`, etichetta: GIORNI[o.giorno], acceso: !!o.apertura })}
           <div class="ore" id="ore-${o.giorno}"${o.apertura ? "" : " hidden"}>
             <div><label class="etichetta-ora" for="apre-${o.giorno}">Apre<span class="solo-lettori"> ${GIORNI[o.giorno]}</span></label>
               <input type="time" id="apre-${o.giorno}" value="${e(o.apertura || "10:00")}"></div>
@@ -173,12 +173,18 @@ export function disegnaInfo(el, dati, ricarica, esci) {
   /* demo */
   $("#modalita_demo", el).onchange = async ev => {
     const acceso = ev.target.checked;
+    $("#modalita_demo-nome", el).textContent = acceso ? "Demo attiva" : "Sito ufficiale";
     if (!acceso && !(await conferma("Spegnere la modalità demo? Il sito diventa ufficiale e visibile su Google.", { si: "Sì, spegni" }))) {
       ev.target.checked = true;
+      $("#modalita_demo-nome", el).textContent = "Demo attiva";
       return;
     }
-    if (await salva(() => api("PATCH", "/impostazioni", { modalita_demo: acceso ? "1" : "0" }), acceso ? "Demo attiva" : "Il sito è ufficiale")) await ricarica();
-    else ev.target.checked = !acceso;
+    if (await salva(() => api("PATCH", "/impostazioni", { modalita_demo: acceso ? "1" : "0" }), acceso ? "Demo attiva" : "Il sito è ufficiale")) {
+      dati.impostazioni.modalita_demo = acceso ? "1" : "0";
+    } else {
+      ev.target.checked = !acceso;
+      $("#modalita_demo-nome", el).textContent = acceso ? "Sito ufficiale" : "Demo attiva";
+    }
   };
 }
 

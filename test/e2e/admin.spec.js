@@ -131,3 +131,11 @@ test("si naviga con la sola tastiera", async ({ page }) => {
   await page.keyboard.press("Space");
   await expect(page.locator("#ore-5")).toBeVisible();
 });
+
+test("dopo il salvataggio il focus torna sulla riga del prodotto", async ({ page }) => {
+  await entra(page);
+  await page.locator('[data-schermata="menu"]').click();
+  await page.locator('[data-prodotto="pg1"]').click();
+  await page.locator('#modulo-editor button[type="submit"]').click();
+  await expect(page.locator('[data-prodotto="pg1"]')).toBeFocused();
+});

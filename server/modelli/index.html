@@ -65,7 +65,7 @@
   <section class="sezione" id="menu" aria-labelledby="titolo-menu">
     <div class="wrap">
       <p class="kicker">02 · Il menù</p>
-      <h2 id="titolo-menu">Cosa mangi oggi?</h2>
+      <h2 id="titolo-menu" tabindex="-1">Cosa mangi oggi?</h2>
       <p class="sezione-sotto">Prezzo unico per categoria. Tocca un prodotto per vedere ingredienti e allergeni.</p>
       <!--slot:chips-->
       <!--slot:menu-->
@@ -107,12 +107,12 @@
     <button type="button" class="chiudi" data-chiudi aria-label="Chiudi">×</button>
   </div>
   <div class="foglio-corpo">
-    <p class="avviso" id="avviso-vassoio" role="status" hidden></p>
+    <p class="avviso" id="avviso-vassoio" role="status"></p>
     <div class="solo-lettori" id="annunci-vassoio" aria-live="polite"></div>
     <ul class="righe" id="righe-vassoio"></ul>
     <div class="campo">
-      <label for="nome-ritiro">Nome per il ritiro</label>
-      <input id="nome-ritiro" type="text" autocomplete="given-name" maxlength="40" aria-describedby="errore-nome">
+      <label for="nome-ritiro">Nome per il ritiro (obbligatorio)</label>
+      <input id="nome-ritiro" type="text" autocomplete="given-name" maxlength="40" aria-required="true" aria-describedby="errore-nome">
       <p class="errore-campo" id="errore-nome" hidden></p>
     </div>
     <div class="campo">
@@ -127,7 +127,7 @@
   <div class="foglio-piede">
     <div class="totale-riga"><span>Totale</span><span id="totale-vassoio">0,00 €</span></div>
     <a class="bottone bottone-giallo" id="invia-whatsapp" href="#" target="_blank" rel="noopener" aria-describedby="motivo-blocco">Invia su WhatsApp</a>
-    <p class="motivo" id="motivo-blocco" role="status" hidden></p>
+    <p class="motivo" id="motivo-blocco" role="status"></p>
     <div id="chiedi-svuota" hidden>
       <p class="nota-piccola">Messaggio pronto su WhatsApp — svuoto il vassoio?</p>
       <div class="chiedi">
