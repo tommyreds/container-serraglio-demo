@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { rottePubbliche } from "./rotte/pubbliche.js";
 import { rotteAdmin } from "./rotte/admin.js";
+import { creaRender } from "./render.js";
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 
@@ -38,14 +39,15 @@ function soloStessaOrigine(req, res, next) {
 
 export function creaApp({
   db, now = () => new Date(), produzione = false,
-  cartellaFoto, cartellaPublic = path.join(qui, "..", "public")
+  cartellaFoto, cartellaPublic = path.join(qui, "..", "public"), baseUrl = ""
 }) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", 1);   // dietro Caddy: req.ip è quello del visitatore
-  app.locals.invalida = () => {};
+  const render = creaRender({ db, now, cartellaPublic, cartellaFoto, baseUrl });
+  app.locals.invalida = render.invalida;
 
-  const contesto = { db, now, produzione, cartellaFoto, cartellaPublic, app };
+  const contesto = { db, now, produzione, cartellaFoto, cartellaPublic, app, render, baseUrl };
 
   app.use(intestazioni);
   app.use("/api/admin", soloStessaOrigine, rotteAdmin(contesto));

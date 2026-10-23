@@ -26,7 +26,7 @@ if (PRODUZIONE && verificaPin("246810", utente.hash, utente.sale)) {
   process.exit(1);
 }
 
-const app = creaApp({ db, produzione: PRODUZIONE, cartellaFoto });
+const app = creaApp({ db, produzione: PRODUZIONE, cartellaFoto, baseUrl: (process.env.BASE_URL || "").replace(/[/]+$/, "") });
 app.listen(PORTA, () => {
   console.log(`Container Serraglio in ascolto su http://localhost:${PORTA}`);
   console.log(`Pannello di gestione: http://localhost:${PORTA}/admin`);

@@ -4,8 +4,12 @@ import { leggiMenu, leggiOrari, leggiChiusure, leggiImpostazioni } from "../db.j
 import { NOME_VALIDO, TIPI_MIME } from "../foto.js";
 import { oraRoma } from "../../public/lib/orari.js";
 
-export function rottePubbliche({ db, now, cartellaFoto }) {
+export function rottePubbliche({ db, now, cartellaFoto, render }) {
   const r = express.Router();
+
+  r.get("/", (req, res) => {
+    res.set("Cache-Control", "no-cache").type("html").send(render.pagina());
+  });
 
   r.get("/salute", (req, res) => {
     db.prepare("SELECT 1").get();

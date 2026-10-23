@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--slot:head-meta-->
+<meta name="theme-color" content="#F4F1EA">
+<link rel="icon" href="{{asset:img/logo-blu.png}}">
+<link rel="preload" href="{{asset:fonts/bricolage-800.woff2}}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{asset:fonts/dmsans-400.woff2}}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{asset:img/p-hamburger.webp}}" as="image" fetchpriority="high">
+<link rel="stylesheet" href="{{asset:style.css}}">
+<!--slot:jsonld-->
+</head>
+<body>
+<a class="salta" href="#menu">Vai al menù</a>
+<!--slot:demo-->
+
+<header class="testata">
+  <div class="wrap testata-in">
+    <a class="marchio" href="#top">
+      <img src="{{asset:img/logo-blu.png}}" alt="" width="113" height="166">
+      <span>Container Serraglio</span>
+    </a>
+    <nav class="nav" aria-label="Sezioni">
+      <a href="#come">Come funziona</a>
+      <a href="#menu">Menù</a>
+      <a href="#dove">Dove siamo</a>
+    </nav>
+    <a class="bottone bottone-giallo" href="#menu">Ordina</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero" aria-labelledby="titolo-hero">
+    <div class="wrap hero-griglia">
+      <div>
+        <!--slot:stato-->
+        <h1 id="titolo-hero">Il pranzo <mark>a due passi</mark> dal PIN</h1>
+        <p class="hero-sotto">Scegli, invia su WhatsApp, ritira. Bevuta e caffè compresi.</p>
+        <div class="hero-azioni">
+          <a class="bottone" href="#menu">Guarda il menù</a>
+          <!--slot:google-->
+        </div>
+      </div>
+      <div class="hero-foto">
+        <img src="{{asset:img/p-hamburger.webp}}" alt="Hamburgher con patatine fritte" width="552" height="400" fetchpriority="high">
+      </div>
+    </div>
+  </section>
+
+  <section class="sezione-scura" id="come" aria-labelledby="titolo-come">
+    <div class="wrap">
+      <p class="kicker">01 · Come funziona</p>
+      <h2 id="titolo-come">Tre tocchi e passi a prenderlo</h2>
+      <ol class="passi">
+        <li class="passo"><span><strong>Componi</strong><span>Aggiungi quello che ti va</span></span></li>
+        <li class="passo"><span><strong>Scegli l'ora</strong><span>Quando passi a ritirare</span></span></li>
+        <li class="passo"><span><strong>Invia su WhatsApp</strong><span>Il messaggio è già pronto</span></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sezione" id="menu" aria-labelledby="titolo-menu">
+    <div class="wrap">
+      <p class="kicker">02 · Il menù</p>
+      <h2 id="titolo-menu">Cosa mangi oggi?</h2>
+      <p class="sezione-sotto">Prezzo unico per categoria. Tocca un prodotto per vedere ingredienti e allergeni.</p>
+      <!--slot:chips-->
+      <!--slot:menu-->
+    </div>
+  </section>
+
+  <section class="sezione" id="dove" aria-labelledby="titolo-dove">
+    <div class="wrap">
+      <p class="kicker">03 · Dove siamo</p>
+      <h2 id="titolo-dove">Davanti al polo universitario</h2>
+      <!--slot:dove-->
+    </div>
+  </section>
+
+</main>
+
+<footer class="piede">
+  <div class="wrap piede-griglia">
+    <img src="{{asset:img/logo-bianco.png}}" alt="Container Serraglio" width="113" height="166" loading="lazy">
+    <!--slot:legale-->
+    <nav class="piede-link" aria-label="Informazioni">
+      <a href="privacy">Privacy e cookie</a>
+      <a href="allergeni">Allergeni</a>
+      <a href="ordini-come">Come funzionano gli ordini</a>
+      <a href="crediti">Crediti foto</a>
+    </nav>
+  </div>
+</footer>
+
+<button type="button" class="barra-vassoio" id="barra-vassoio" data-pezzi="0" hidden>
+  <span class="conta">0</span>
+  <span class="totale">0,00 €</span>
+  <span class="vai">Ordina</span>
+</button>
+
+<dialog class="foglio" id="foglio-vassoio" aria-labelledby="titolo-vassoio">
+  <div class="foglio-testa">
+    <h2 id="titolo-vassoio">Il tuo vassoio</h2>
+    <button type="button" class="chiudi" data-chiudi aria-label="Chiudi">×</button>
+  </div>
+  <div class="foglio-corpo">
+    <p class="avviso" id="avviso-vassoio" hidden></p>
+    <ul class="righe" id="righe-vassoio"></ul>
+    <div class="campo">
+      <label for="nome-ritiro">Nome per il ritiro</label>
+      <input id="nome-ritiro" type="text" autocomplete="given-name" maxlength="40" aria-describedby="errore-nome">
+      <p class="errore-campo" id="errore-nome" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="ora-ritiro">Ora di ritiro</label>
+      <select id="ora-ritiro"></select>
+    </div>
+    <div class="campo">
+      <label for="note">Note per la cucina (facoltative)</label>
+      <textarea id="note" maxlength="200" placeholder="Allergie, senza salse…"></textarea>
+    </div>
+  </div>
+  <div class="foglio-piede">
+    <div class="totale-riga"><span>Totale</span><span id="totale-vassoio">0,00 €</span></div>
+    <a class="bottone bottone-giallo" id="invia-whatsapp" href="#" target="_blank" rel="noopener">Invia su WhatsApp</a>
+    <p class="motivo" id="motivo-blocco" hidden></p>
+    <div id="chiedi-svuota" hidden>
+      <p class="nota-piccola">Messaggio pronto su WhatsApp — svuoto il vassoio?</p>
+      <div class="chiedi">
+        <button type="button" class="bottone" id="svuota-si">Sì, svuota</button>
+        <button type="button" class="bottone bottone-chiaro" id="svuota-no">No, tienilo</button>
+      </div>
+    </div>
+    <p class="nota-piccola">Si paga al ritiro. L'ordine è confermato quando il locale risponde su WhatsApp.</p>
+  </div>
+</dialog>
+
+<dialog class="foglio" id="foglio-dettaglio" aria-labelledby="titolo-dettaglio">
+  <div class="foglio-testa">
+    <h2 id="titolo-dettaglio"></h2>
+    <button type="button" class="chiudi" data-chiudi aria-label="Chiudi">×</button>
+  </div>
+  <div class="foglio-corpo" id="corpo-dettaglio"></div>
+  <div class="foglio-piede">
+    <button type="button" class="bottone bottone-giallo" id="aggiungi-dettaglio">Aggiungi al vassoio</button>
+  </div>
+</dialog>
+
+<div class="solo-lettori" id="annunci" aria-live="polite"></div>
+
+<!--slot:dati-->
+<script type="module" src="{{asset:app.js}}"></script>
+</body>
+</html>

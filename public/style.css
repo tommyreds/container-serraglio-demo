@@ -121,7 +121,7 @@ button { cursor: pointer; }
 }
 .badge-google .stella { color: #B7791F; font-size: 1.15rem; }
 .badge-google small { display: block; font-weight: 400; color: var(--tenue); font-size: .78rem; }
-.hero-foto { position: relative; margin: 0 auto; width: min(100%, 460px); }
+.hero-foto { position: relative; margin: 0 auto; width: min(72%, 460px); }
 .hero-foto::before {
   content: ""; position: absolute; inset: 8% 4% 2%; border-radius: 50%; background: var(--piatto);
 }
@@ -129,6 +129,7 @@ button { cursor: pointer; }
 @media (min-width: 900px) {
   .hero { padding: 56px 0 72px; }
   .hero-griglia { grid-template-columns: 1.1fr .9fr; gap: 48px; }
+  .hero-foto { width: min(100%, 460px); }
 }
 
 /* ---------- sezioni ---------- */
