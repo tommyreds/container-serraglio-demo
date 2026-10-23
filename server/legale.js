@@ -103,19 +103,27 @@ ${voci.length ? `<ul>${voci.map(c => `<li><strong>${e(c.prodotto)}</strong>: «$
     : "<p>Tutte le foto del menù sono del locale.</p>"}`;
 }
 
+/* [titolo, contenuto, descrizione, indicizzabile]: solo gli allergeni sono
+   utili a chi cerca su Google; le altre pagine restano fuori dai risultati. */
 const PAGINE = {
-  privacy: ["Privacy e cookie", privacy],
-  allergeni: ["Allergeni", allergeni],
-  "ordini-come": ["Come funzionano gli ordini", ordiniCome],
-  crediti: ["Crediti delle foto", crediti]
+  privacy: ["Privacy e cookie", privacy, "Come Container Serraglio tratta i dati: niente account, niente cookie di profilazione, ordini solo tramite WhatsApp.", false],
+  allergeni: ["Allergeni", allergeni, "Tabella dei 14 allergeni per ogni schiacciata, pinsa, hamburger e primo del menù di Container Serraglio, Prato.", true],
+  "ordini-come": ["Come funzionano gli ordini", ordiniCome, "Come ordinare da Container Serraglio: scegli dal menù, invia su WhatsApp, ritira e paga al banco davanti al PIN di Prato.", false],
+  crediti: ["Crediti delle foto", crediti, "Autori e licenze delle foto indicative usate nel menù di Container Serraglio.", false]
 };
 export const NOMI_PAGINE = Object.keys(PAGINE);
 
-export function paginaLegale(nome, contesto, { asset = f => f } = {}) {
-  const [titolo, contenuto] = PAGINE[nome];
+export function paginaLegale(nome, contesto, { asset = f => f, baseUrl = "" } = {}) {
+  const [titolo, contenuto, descrizione, indicizzabile] = PAGINE[nome];
   const imp = contesto.impostazioni;
+  const robots = imp.modalita_demo === "1" ? "noindex" : indicizzabile ? "" : "noindex, follow";
   const slot = {
-    "head-meta": `<title>${e(titolo)} — ${e(imp.nome_attivita)}</title>${imp.modalita_demo === "1" ? '\n<meta name="robots" content="noindex">' : ""}`,
+    "head-meta": [
+      `<title>${e(titolo)} — ${e(imp.nome_attivita)}</title>`,
+      `<meta name="description" content="${e(descrizione)}">`,
+      robots ? `<meta name="robots" content="${robots}">` : "",
+      baseUrl ? `<link rel="canonical" href="${e(baseUrl)}/${nome}">` : ""
+    ].filter(Boolean).join("\n"),
     demo: imp.modalita_demo === "1" ? '<p class="nastro-demo" role="note">Demo — sito non ufficiale, non gestito dal locale</p>' : "",
     contenuto: contenuto(contesto),
     legale: footerLegale(imp)
@@ -133,7 +141,7 @@ export function robotsTxt(demo, base = "") {
 }
 
 export function sitemapXml(base) {
-  const indirizzi = ["/", ...NOMI_PAGINE.map(n => `/${n}`)];
+  const indirizzi = ["/", ...NOMI_PAGINE.filter(n => PAGINE[n][3]).map(n => `/${n}`)];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${indirizzi.map(u => `  <url><loc>${e(base + u)}</loc></url>`).join("\n")}

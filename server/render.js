@@ -145,7 +145,19 @@ ${orari.map(o => `      <li${o.giorno === giorno ? ' class="oggi"' : ""}><span>$
 </div>`;
 }
 
-function jsonLd(imp, orari, baseUrl) {
+const telefonoInternazionale = t => {
+  const cifre = String(t || "").replace(/[^\d+]/g, "");
+  if (!cifre) return undefined;
+  return cifre.startsWith("+") ? cifre : cifre.startsWith("39") && cifre.length > 10 ? `+${cifre}` : `+39${cifre}`;
+};
+const fasciaPrezzi = menu => {
+  const prezzi = menu.flatMap(c => c.prodotti.map(p => p.prezzo_finale));
+  if (!prezzi.length) return "€";
+  const [min, max] = [Math.min(...prezzi), Math.max(...prezzi)];
+  return min === max ? `€${min}` : `€${min}-${max}`;
+};
+
+function jsonLd(imp, orari, baseUrl, menu) {
   const indirizzo = (imp.indirizzo || "").match(/^(.*?),\s*(\d{5})\s+(.+)$/);
   const giorni = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const dati = {
@@ -153,11 +165,14 @@ function jsonLd(imp, orari, baseUrl) {
     "@type": "Restaurant",
     name: imp.nome_attivita,
     servesCuisine: ["Italiana", "Street food"],
-    priceRange: "€",
-    telephone: imp.telefono ? `+39 ${imp.telefono}` : undefined,
+    priceRange: fasciaPrezzi(menu),
+    "@id": baseUrl ? `${baseUrl}/#ristorante` : undefined,
+    telephone: telefonoInternazionale(imp.telefono),
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(imp.indirizzo || "")}`,
+    logo: baseUrl ? `${baseUrl}/img/icona-512.png` : undefined,
     address: indirizzo ? {
       "@type": "PostalAddress", streetAddress: indirizzo[1], postalCode: indirizzo[2],
-      addressLocality: indirizzo[3], addressCountry: "IT"
+      addressLocality: indirizzo[3], addressRegion: "PO", addressCountry: "IT"
     } : undefined,
     openingHoursSpecification: orari.filter(o => o.apertura).map(o => ({
       "@type": "OpeningHoursSpecification", dayOfWeek: giorni[o.giorno], opens: o.apertura, closes: o.chiusura
@@ -166,17 +181,16 @@ function jsonLd(imp, orari, baseUrl) {
     hasMenu: baseUrl ? `${baseUrl}/#menu` : undefined,
     image: baseUrl ? `${baseUrl}/img/og.jpg` : undefined,
     sameAs: [imp.instagram, imp.facebook].filter(Boolean),
-    aggregateRating: imp.google_voto && imp.google_recensioni ? {
-      "@type": "AggregateRating", ratingValue: imp.google_voto, reviewCount: imp.google_recensioni, bestRating: "5"
-    } : undefined
+    /* niente aggregateRating: Google non accetta il voto che un locale
+       dichiara di sé (review snippet "self-serving"); il voto resta visibile
+       come testo con il link alla scheda Google. */
   };
   return `<script type="application/ld+json">${jsonPerHtml(dati)}</script>`;
 }
 
 function headMeta(imp, baseUrl) {
-  const titolo = `${imp.nome_attivita} — pranzo da asporto davanti al PIN di Prato`;
-  const descrizione = "Schiacciate, pinse, hamburgher e primi preparati nel container davanti al PIN. Scegli dal menù, invia l'ordine su WhatsApp e passa a ritirarlo. Bevuta e caffè compresi.";
-  const immagine = baseUrl ? `${baseUrl}/img/og.jpg` : "img/og.jpg";
+  const titolo = `${imp.nome_attivita} Prato · Schiacciate e panini al PIN`;
+  const descrizione = "Schiacciate, panini, pinse e primi a Prato, in Via Protche 7/9 davanti al PIN. Ordina su WhatsApp e ritira: bevuta e caffè compresi.";
   return [
     `<title>${e(titolo)}</title>`,
     `<meta name="description" content="${e(descrizione)}">`,
@@ -186,9 +200,16 @@ function headMeta(imp, baseUrl) {
     `<meta property="og:locale" content="it_IT">`,
     `<meta property="og:title" content="${e(titolo)}">`,
     `<meta property="og:description" content="${e(descrizione)}">`,
-    `<meta property="og:image" content="${e(immagine)}">`,
-    `<meta property="og:image:width" content="1200">`,
-    `<meta property="og:image:height" content="630">`,
+    `<meta property="og:site_name" content="${e(imp.nome_attivita)}">`,
+    // gli indirizzi per le anteprime devono essere assoluti: senza BASE_URL si omettono
+    ...(baseUrl ? [
+      `<meta property="og:url" content="${e(baseUrl)}/">`,
+      `<meta property="og:image" content="${e(baseUrl)}/img/og.jpg">`,
+      `<meta property="og:image:type" content="image/jpeg">`,
+      `<meta property="og:image:width" content="1200">`,
+      `<meta property="og:image:height" content="630">`,
+      `<meta property="og:image:alt" content="Il pranzo a due passi dal PIN: hamburger del Container Serraglio">`
+    ] : []),
     `<meta name="twitter:card" content="summary_large_image">`
   ].filter(Boolean).join("\n");
 }
@@ -221,7 +242,7 @@ export function creaRender({ db, now = () => new Date(), cartellaPublic = PUBLIC
     const chiusure = leggiChiusure(db, oggi);
     const slot = {
       "head-meta": headMeta(imp, baseUrl),
-      jsonld: jsonLd(imp, orari, baseUrl),
+      jsonld: jsonLd(imp, orari, baseUrl, menu),
       demo: imp.modalita_demo === "1"
         ? '<p class="nastro-demo" role="note">Demo — sito non ufficiale, non gestito dal locale</p>' : "",
       google: googleHtml(imp),

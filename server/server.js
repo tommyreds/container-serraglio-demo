@@ -21,6 +21,10 @@ if (!utente) {
   console.error("Database vuoto: esegui prima  npm run seed");
   process.exit(1);
 }
+if (PRODUZIONE && !/^https:\/\/[^/]+$/.test((process.env.BASE_URL || "").replace(/[/]+$/, ""))) {
+  console.error("In produzione serve BASE_URL con https, es. BASE_URL=https://containerserraglio.it");
+  process.exit(1);
+}
 if (PRODUZIONE && verificaPin("246810", utente.hash, utente.sale)) {
   console.error("Cambia il PIN predefinito prima di andare online: npm run seed -- --pin=XXXXXX");
   process.exit(1);

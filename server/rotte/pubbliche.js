@@ -30,7 +30,7 @@ export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render, 
       const oggi = oraRoma(now()).data;
       res.set("Cache-Control", "no-cache").type("html").send(paginaLegale(nome, {
         impostazioni: leggiImpostazioni(db), menu: leggiMenu(db, { oggi }), oggi
-      }, { asset }));
+      }, { asset, baseUrl }));
     });
   }
   r.get("/robots.txt", (req, res) => {
@@ -40,7 +40,7 @@ export function rottePubbliche({ db, now, cartellaFoto, cartellaPublic, render, 
 
   // esplicita: public/admin/ è anche una cartella (i moduli del pannello)
   r.get("/admin", (req, res) => {
-    res.set("Cache-Control", "no-cache").sendFile("admin.html", { root: path.resolve(cartellaPublic) });
+    res.set({ "Cache-Control": "no-cache", "X-Robots-Tag": "noindex, nofollow" }).sendFile("admin.html", { root: path.resolve(cartellaPublic) });
   });
 
   r.get("/salute", (req, res) => {

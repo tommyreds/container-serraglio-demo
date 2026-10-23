@@ -150,7 +150,11 @@ test("JSON-LD Restaurant", () => {
   scriviImpostazione(db, "google_voto", "4.7");
   scriviImpostazione(db, "google_recensioni", "120");
   ld = JSON.parse(pagina(db).match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
-  assert.deepEqual(ld.aggregateRating, { "@type": "AggregateRating", ratingValue: "4.7", reviewCount: "120", bestRating: "5" });
+  // il voto Google è autodichiarato dal locale: niente aggregateRating (regole Google sui review snippet)
+  assert.equal(ld.aggregateRating, undefined);
+  assert.equal(ld.address.addressRegion, "PO");
+  assert.equal(ld.telephone, "+393270536624");
+  assert.equal(ld.priceRange, "€6-8");
 });
 
 test("risorse versionate per la cache lunga", () =>

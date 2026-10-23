@@ -50,6 +50,7 @@ export function creaApp({
   const contesto = { db, now, produzione, cartellaFoto, cartellaPublic, app, render, baseUrl };
 
   app.use(intestazioni);
+  app.use("/api", (req, res, next) => { res.set("X-Robots-Tag", "noindex, nofollow"); next(); });
   app.use("/api/admin", soloStessaOrigine, rotteAdmin(contesto));
   app.use(rottePubbliche(contesto));
   app.use("/api", (req, res) => res.status(404).json({ errore: "Risorsa non trovata." }));

@@ -70,9 +70,9 @@ test("robots e sitemap", () => {
   assert.equal(robotsTxt(true), "User-agent: *\nDisallow: /\n");
   assert.equal(robotsTxt(false, "https://esempio.it"), "User-agent: *\nDisallow: /admin\nDisallow: /api/\nSitemap: https://esempio.it/sitemap.xml\n");
   const xml = sitemapXml("https://esempio.it");
-  for (const u of ["https://esempio.it/", "https://esempio.it/privacy", "https://esempio.it/allergeni", "https://esempio.it/ordini-come"]) {
-    assert.ok(xml.includes(`<loc>${u}</loc>`), u);
-  }
+  // solo le pagine utili a chi cerca: privacy, condizioni e crediti restano fuori (noindex)
+  for (const u of ["https://esempio.it/", "https://esempio.it/allergeni"]) assert.ok(xml.includes(`<loc>${u}</loc>`), u);
+  for (const u of ["https://esempio.it/privacy", "https://esempio.it/crediti"]) assert.ok(!xml.includes(u), u);
 });
 
 test("le pagine rispondono, in demo noindex, e il piede è uguale alla home", async () => {
@@ -87,4 +87,18 @@ test("le pagine rispondono, in demo noindex, e il piede è uguale alla home", as
   assert.equal(await (await fetch(p.base + "/robots.txt")).text(), "User-agent: *\nDisallow: /\n");
   assert.equal((await fetch(p.base + "/sitemap.xml")).headers.get("content-type").split(";")[0], "application/xml");
   await p.chiudi();
+});
+
+test("ogni pagina ha la sua descrizione", () => {
+  for (const nome of ["privacy", "allergeni", "ordini-come", "crediti"]) {
+    assert.match(paginaLegale(nome, contesto(dbDiProva())), /<meta name="description" content="[^"]{40,}">/, nome);
+  }
+});
+
+test("pagine solo informative: noindex anche fuori dalla demo; allergeni indicizzabili", () => {
+  const db = dbDiProva();
+  scriviImpostazione(db, "modalita_demo", "0");
+  assert.ok(paginaLegale("privacy", contesto(db)).includes('<meta name="robots" content="noindex, follow">'));
+  assert.ok(!paginaLegale("allergeni", contesto(db)).includes('name="robots"'));
+  assert.ok(paginaLegale("allergeni", contesto(db), { baseUrl: "https://esempio.it" }).includes('<link rel="canonical" href="https://esempio.it/allergeni">'));
 });

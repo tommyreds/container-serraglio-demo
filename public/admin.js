@@ -175,8 +175,8 @@ async function avvia() {
 }
 
 try {
-  await api("GET", "/stato");
-  await avvia();
+  const { dentro } = await api("GET", "/sessione");
+  if (dentro) await avvia(); else mostraAccesso();
 } catch {
   mostraAccesso();
 }

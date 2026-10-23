@@ -253,7 +253,8 @@ button { cursor: pointer; }
 .piede-link { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .piede-link a { display: inline-block; padding: 6px 0; }
 .legale { color: var(--tenue-notte); line-height: 1.7; }
-.da-completare { background: rgb(255 196 46 / .18); color: var(--giallo); border-radius: 6px; padding: 0 6px; font-style: italic; }
+.da-completare { background: #FFF3D1; color: #6B4500; border-radius: 6px; padding: 0 6px; font-style: italic; }
+.piede .da-completare { background: rgb(255 196 46 / .18); color: var(--giallo); }
 
 /* ---------- nastro demo ---------- */
 

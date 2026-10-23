@@ -192,3 +192,11 @@ test("le risposte del pannello non finiscono nella cache del browser", async () 
   assert.equal((await p.richiesta("GET", "/api/admin/menu", { cookie: c })).intestazioni.get("cache-control"), "no-store");
   await p.chiudi();
 });
+
+test("/sessione dice se si è dentro senza errori in console", async () => {
+  const p = await avviaProva();
+  assert.deepEqual((await p.richiesta("GET", "/api/admin/sessione")).json, { dentro: false });
+  const c = await p.accedi();
+  assert.deepEqual((await p.richiesta("GET", "/api/admin/sessione", { cookie: c })).json, { dentro: true });
+  await p.chiudi();
+});

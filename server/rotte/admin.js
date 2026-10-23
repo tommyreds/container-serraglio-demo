@@ -106,6 +106,11 @@ export function rotteAdmin(contesto) {
 
   r.get("/stato", richiediAccesso, (req, res) => res.json({ utente: req.utente }));
 
+  // all'apertura del pannello: risponde sempre 200, così la console resta pulita
+  r.get("/sessione", (req, res) => {
+    res.json({ dentro: !!leggiSessione(db, leggiCookie(req, NOME_COOKIE), now()) });
+  });
+
   r.post("/pin", richiediAccesso, (req, res) => {
     // stesso limite del login: altrimenti una sessione rubata proverebbe PIN all'infinito
     if (respingiSeBloccato(req, res)) return;
