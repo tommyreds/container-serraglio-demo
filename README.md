@@ -1,5 +1,14 @@
 # Container Serraglio — sito e pannello
 
+> **Progetto dimostrativo, non ufficiale.** Questo sito non è gestito né
+> approvato da Container Serraglio: è una proposta realizzata a scopo
+> dimostrativo. Nome, logo, menù, prezzi e orari servono solo a mostrare il
+> funzionamento e possono non corrispondere alla realtà; le foto sono
+> indicative. Non usare questo sito per ordinare.
+>
+> *Unofficial demo project, not affiliated with or endorsed by Container
+> Serraglio. Names, logo, menu and prices are for demonstration only.*
+
 Sito del container di street food davanti al PIN di Prato. Gli studenti
 scelgono dal menù, compongono il vassoio e inviano l'ordine **su WhatsApp**
 con un messaggio già pronto; poi passano a ritirare e pagano al banco.
