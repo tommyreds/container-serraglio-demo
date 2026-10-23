@@ -1,0 +1,162 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { avviaProva, PIN_PROVA } from "./aiuto.js";
+
+test("login giusto imposta cookie HttpOnly SameSite=Strict", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("POST", "/api/admin/login", { corpo: { pin: PIN_PROVA } });
+  assert.equal(r.stato, 200);
+  const cookie = r.intestazioni.get("set-cookie");
+  assert.match(cookie, /^sessione=[0-9a-f]{64}; HttpOnly; SameSite=Strict; Path=\/; Max-Age=2592000$/);
+  assert.equal(p.db.prepare("SELECT esito FROM accessi ORDER BY id DESC").get().esito, "ok");
+  await p.chiudi();
+});
+
+test("in produzione il cookie è __Host- e Secure", async () => {
+  const p = await avviaProva({ produzione: true });
+  const r = await p.richiesta("POST", "/api/admin/login", { corpo: { pin: PIN_PROVA } });
+  assert.match(r.intestazioni.get("set-cookie"), /^__Host-sessione=[0-9a-f]{64}; HttpOnly; Secure; SameSite=Strict; Path=\//);
+  await p.chiudi();
+});
+
+test("PIN sbagliato: 401 e accesso registrato come ko", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("POST", "/api/admin/login", { corpo: { pin: "000000" } });
+  assert.equal(r.stato, 401);
+  assert.equal(r.json.errore, "PIN non valido.");
+  assert.equal(p.db.prepare("SELECT esito FROM accessi ORDER BY id DESC").get().esito, "ko");
+  await p.chiudi();
+});
+
+test("sesto tentativo dallo stesso IP: 429 anche con il PIN giusto", async () => {
+  const p = await avviaProva();
+  for (let i = 0; i < 5; i++) assert.equal((await p.richiesta("POST", "/api/admin/login", { corpo: { pin: "000000" } })).stato, 401);
+  const r = await p.richiesta("POST", "/api/admin/login", { corpo: { pin: PIN_PROVA } });
+  assert.equal(r.stato, 429);
+  assert.equal(r.json.errore, "Troppi tentativi. Riprova fra un quarto d'ora.");
+  await p.chiudi();
+});
+
+test("stato e logout", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  assert.deepEqual((await p.richiesta("GET", "/api/admin/stato", { cookie: c })).json, { utente: "banco" });
+  assert.equal((await p.richiesta("POST", "/api/admin/logout", { cookie: c })).stato, 200);
+  assert.equal((await p.richiesta("GET", "/api/admin/stato", { cookie: c })).stato, 401);
+  await p.chiudi();
+});
+
+test("senza sessione: 401 con messaggio", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("GET", "/api/admin/stato");
+  assert.equal(r.stato, 401);
+  assert.equal(r.json.errore, "Sessione scaduta, rifai l'accesso.");
+  await p.chiudi();
+});
+
+test("scrittura da altra origine: 403", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  const r = await p.richiesta("POST", "/api/admin/logout", { cookie: c, origine: "https://evil.example" });
+  assert.equal(r.stato, 403);
+  assert.equal(r.json.errore, "Richiesta non consentita.");
+  await p.chiudi();
+});
+
+test("login senza Origin: 403", async () => {
+  const p = await avviaProva();
+  assert.equal((await p.richiesta("POST", "/api/admin/login", { corpo: { pin: PIN_PROVA }, origine: null })).stato, 403);
+  await p.chiudi();
+});
+
+test("scrittura senza JSON: 415", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  const r = await p.richiesta("POST", "/api/admin/logout", { cookie: c, tipo: "text/plain" });
+  assert.equal(r.stato, 415);
+  assert.equal(r.json.errore, "Formato non valido.");
+  await p.chiudi();
+});
+
+test("JSON malformato: 400", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("POST", "/api/admin/login", { grezzo: "{nope", tipo: "application/json" });
+  assert.equal(r.stato, 400);
+  await p.chiudi();
+});
+
+test("cambio PIN chiude le altre sessioni", async () => {
+  const p = await avviaProva();
+  const c1 = await p.accedi();
+  const c2 = await p.accedi();
+  const r = await p.richiesta("POST", "/api/admin/pin", { cookie: c1, corpo: { attuale: PIN_PROVA, nuovo: "730194" } });
+  assert.equal(r.stato, 200);
+  assert.equal((await p.richiesta("GET", "/api/admin/stato", { cookie: c2 })).stato, 401);
+  assert.equal((await p.richiesta("GET", "/api/admin/stato", { cookie: c1 })).stato, 200);
+  await p.accedi("730194");
+  await p.chiudi();
+});
+
+test("cambio PIN: attuale sbagliato o nuovo banale", async () => {
+  const p = await avviaProva();
+  const c = await p.accedi();
+  assert.equal((await p.richiesta("POST", "/api/admin/pin", { cookie: c, corpo: { attuale: "000000", nuovo: "730194" } })).stato, 401);
+  const r = await p.richiesta("POST", "/api/admin/pin", { cookie: c, corpo: { attuale: PIN_PROVA, nuovo: "123456" } });
+  assert.equal(r.stato, 400);
+  assert.equal(r.json.errore, "Scegli un PIN meno prevedibile: niente cifre uguali o in sequenza.");
+  await p.chiudi();
+});
+
+test("esci da tutti i dispositivi", async () => {
+  const p = await avviaProva();
+  const c1 = await p.accedi();
+  const c2 = await p.accedi();
+  assert.equal((await p.richiesta("POST", "/api/admin/logout-tutti", { cookie: c1 })).stato, 200);
+  assert.equal((await p.richiesta("GET", "/api/admin/stato", { cookie: c1 })).stato, 401);
+  assert.equal((await p.richiesta("GET", "/api/admin/stato", { cookie: c2 })).stato, 401);
+  await p.chiudi();
+});
+
+test("ultimi accessi", async () => {
+  const p = await avviaProva();
+  await p.richiesta("POST", "/api/admin/login", { corpo: { pin: "000000" } });
+  const c = await p.accedi();
+  const r = await p.richiesta("GET", "/api/admin/accessi", { cookie: c });
+  assert.deepEqual(r.json.accessi.map(a => a.esito), ["ok", "ko"]);
+  assert.equal(r.json.accessi[0].ip_troncato, "127.0.0.0");
+  await p.chiudi();
+});
+
+test("salute e menù pubblico", async () => {
+  const p = await avviaProva({ now: () => new Date("2026-10-22T12:00:00+02:00") });
+  assert.deepEqual((await p.richiesta("GET", "/salute")).json, { ok: true });
+  const m = (await p.richiesta("GET", "/api/menu")).json;
+  assert.equal(m.oggi, "2026-10-22");
+  assert.equal(m.categorie.length, 4);
+  assert.equal(m.orari.length, 7);
+  assert.deepEqual(m.chiusure, []);
+  assert.equal(m.impostazioni.whatsapp, "393270536624");
+  await p.chiudi();
+});
+
+test("intestazioni di sicurezza", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("GET", "/salute");
+  const csp = r.intestazioni.get("content-security-policy");
+  assert.match(csp, /default-src 'self'; script-src 'self'; style-src 'self'/);
+  assert.match(csp, /object-src 'none'; base-uri 'none'/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.equal(r.intestazioni.get("x-content-type-options"), "nosniff");
+  assert.equal(r.intestazioni.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.equal(r.intestazioni.get("permissions-policy"), "camera=(self), microphone=(), geolocation=()");
+  assert.equal(r.intestazioni.get("x-powered-by"), null);
+  await p.chiudi();
+});
+
+test("API inesistente: 404 JSON", async () => {
+  const p = await avviaProva();
+  const r = await p.richiesta("GET", "/api/boh");
+  assert.equal(r.stato, 404);
+  assert.equal(r.json.errore, "Risorsa non trovata.");
+  await p.chiudi();
+});
